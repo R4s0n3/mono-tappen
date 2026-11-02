@@ -21,6 +21,41 @@ Everything below exists to add memory and anticipation. Do not add features that
 pull attention *down into phones* — the game's value is people looking at each
 other.
 
+### Design Principles: a game, not therapy
+
+Tappen is a conversation game that fosters honest, personal conversation and
+closeness. It makes no therapeutic or healing claims.
+
+The inspiration is Arthur Aron's research on gradual, reciprocal
+self-disclosure (the "36 questions"). The escalation graph already mirrors
+that: depth rises by steps, and only as far as the table is willing to go.
+
+**Content boundary.** Cards go up to honest and personal, and stop short of
+trauma, crisis, self-harm, or similar topics. Rules, the app, and store copy
+carry a short line: "Tappen is a game, not therapy."
+
+**Psychological safety.** Passing is always allowed, and it is never
+humiliating.
+
+**Hot seat.** This replaces any punishment or drinking consequence. Whoever
+passes takes the hot seat. It is a gentle invitation, not a penalty: they may
+pick a lighter card, or first hear someone else's answer. Then the seat moves
+on.
+
+**Crown.** The group awards the crown for the most honest, open answer — not
+the most daring or the most shocking. A later, more open answer can take it
+away. There are no points anywhere. Nobody counts. The app tracks hot-seat and
+crown state in the background.
+
+**Depth, with consent.** The group picks the night's depth together (light /
+honest / deep). Cards are drawn within that level.
+
+**End of the night.** Each player privately answers a short prompt, such as
+"What are you taking away from tonight?" It may be shown in the Phase 4
+recap, and never without that player's consent.
+
+**No alcohol framing.** The game no longer uses drinking consequences.
+
 ### Non-negotiable design constraint: stage + controllers
 This is **not** "sync the same card to every device."
 
@@ -59,15 +94,18 @@ Add to the schema. Names are suggestions; keep them consistent across repos.
 
 ```prisma
 model Room {
-  id        String   @id @default(cuid())
-  code      String   @unique          // short, human-readable join code
-  status    RoomStatus                 // LOBBY | ACTIVE | ENDED
-  hostId    String                     // Player.id of the stage owner
-  deckId    String
-  createdAt DateTime @default(now())
-  endedAt   DateTime?
-  players   Player[]
-  turns     Turn[]
+  id              String     @id @default(cuid())
+  code            String     @unique          // short, human-readable join code
+  status          RoomStatus                 // LOBBY | ACTIVE | ENDED
+  hostId          String                     // Player.id of the stage owner
+  deckId          String
+  depthLevel      DepthLevel @default(LIGHT) // LIGHT | HONEST | DEEP
+  hotSeatPlayerId String?                    // Player.id — Phase 3 writes this
+  crownPlayerId   String?                    // Player.id — Phase 3 writes this
+  createdAt       DateTime   @default(now())
+  endedAt         DateTime?
+  players         Player[]
+  turns           Turn[]
 }
 
 model Player {
@@ -98,6 +136,10 @@ Notes:
   (`0/O`, `1/I/l`). 5–6 chars is fine.
 - Guests are first-class. `Player.userId` is nullable by design — see 1.5.
 - `Turn` is the spine of everything in later phases. Get it right now.
+- Reserve room-level state now, even though Phase 1 does not play it.
+  `depthLevel` is the night's depth (`LIGHT | HONEST | DEEP`).
+  `hotSeatPlayerId` and `crownPlayerId` stay null until Phase 3. No points.
+  The server tracks this in the background; nobody counts.
 
 ### 1.2 Realtime transport
 
@@ -123,7 +165,10 @@ simpler and easier to debug.
 ### 1.3 Stage client (`play.tappen.app`)
 
 - Create room → pick deck → get join code.
-- Lobby: show join code prominently, list players as they join.
+- Lobby: show join code prominently, list players as they join. The group
+  picks the night's depth together (light / honest / deep); store it as
+  `depthLevel`. Do not filter the draw on card depth until Phase 3.3 stamps
+  `depth` on cards. Hot seat and crown are not shown yet.
 - Active: render current card large. Show the target player's name.
 - Advance to next card. This is the stage's privilege in Phase 1 — controllers
   cannot advance the turn yet.
@@ -225,8 +270,10 @@ Anonymous + aimed is a harassment vector. Before shipping:
 
 ## Phase 3 — Group Verdict
 
-**Goal:** replace self-declared truth/sip with a group vote. This produces the
-telemetry that Phases 4–6 depend on. Do not skip or reorder it.
+**Goal:** replace self-declared "answer or pass" with a group vote. A pass
+takes the hot seat — a gentle invitation, not a penalty, and not a drink.
+This produces the telemetry that Phases 4–6 depend on. Do not skip or reorder
+it.
 
 ### 3.1 Model
 
@@ -242,17 +289,32 @@ model Verdict {
 }
 ```
 
-Add to `Turn`: `outcome` (`TRUTH_ACCEPTED | CONTESTED_DRANK | SKIPPED_DRANK`)
+Add to `Turn`: `outcome` (`TRUTH_ACCEPTED | CONTESTED_PASSED | SKIPPED_HOTSEAT`)
 and `escalatedFromTurnId String?` (used in Phase 3.3).
+
+`CONTESTED_PASSED` — the table did not accept the answer; the player passed
+and took the hot seat. `SKIPPED_HOTSEAT` — the player passed without answering
+and took the hot seat. These replace `CONTESTED_DRANK` and `SKIPPED_DRANK`.
+There is no drinking outcome.
 
 ### 3.2 Behaviour
 
-- Player answers out loud.
+- Player answers out loud. Passing is always allowed, and it is never
+  humiliating.
 - Every controller except the answering player shows two buttons.
 - Votes are hidden until all are in (or a short timer expires), then revealed on
   the stage at once. Simultaneous reveal is the whole drama — do not show a live
   running tally.
-- If the table doesn't buy it, they drink anyway.
+- If the table doesn't buy it, the player passes and takes the hot seat
+  (`CONTESTED_PASSED`). Skipping outright does the same (`SKIPPED_HOTSEAT`).
+  The hot seat is a gentle invitation, not a penalty: they may pick a lighter
+  card, or first hear someone else's answer. Then the seat moves on. Write
+  `hotSeatPlayerId`. No drinking.
+- The group may move the crown to the most honest, open answer — not the most
+  daring or shocking. A later, more open answer can take it. Write
+  `crownPlayerId`. No points. Nobody counts.
+- Draws stay inside the night's `depthLevel` once cards carry `depth`
+  (Phase 3.3). Until then, record the level and do not filter.
 - Persist the aggregate on the `Turn`.
 
 ### 3.3 Escalation as a first-class action
@@ -275,7 +337,8 @@ model CardRelation {
 
 - Add `depth Int` to the card model.
 - Escalate pulls a `HARDER_VERSION` or `FOLLOW_UP` from the current card. If
-  none exists, fall back to same-category next-depth.
+  none exists, fall back to same-category next-depth. Never above the room's
+  `depthLevel`.
 - Record `escalatedFromTurnId` so escalation chains are queryable. Chain length
   is a strong quality signal — a card that reliably produces long chains is a
   great card.
@@ -311,8 +374,11 @@ data actually supports well, don't force all of them:
 - Who got targeted most
 - Most contested answer of the night
 - Longest escalation chain ("this card caused a 20-minute argument")
-- Truth/sip ratio per player
+- Who holds the crown — the most honest, open answer of the night, not the
+  most daring or shocking. It may have moved.
 - The card nobody would answer
+- Each player's private reflection ("What are you taking away from tonight?").
+  Show a line in the recap only with that player's consent. Never otherwise.
 
 Requirements:
 - Distinct URL per recap. Works for guests via claim link (1.5).
@@ -378,7 +444,7 @@ Publish anonymised aggregate drama:
 - "1,240 rooms live right now"
 - "Most contested card tonight"
 - "This deck was just unlocked for the first time by someone in Lisbon"
-- Global truth-vs-sip ratio, live
+- Accepted answers versus passes, live
 
 Rules:
 - No player names, ever.
