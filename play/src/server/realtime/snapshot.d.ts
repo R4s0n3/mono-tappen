@@ -36,3 +36,9 @@ export function buildRoomState(
 ): Promise<RoomState | null>;
 
 export function getRoomCardPool(roomId: string): Promise<string[]>;
+
+/** SFW, publicly visible cards — the only cards a room will draw. */
+export const playableCardWhere: {
+  readonly nsfw: false;
+  readonly visible: "PUBLIC";
+};

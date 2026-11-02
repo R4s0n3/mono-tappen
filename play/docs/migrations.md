@@ -10,6 +10,8 @@ Production was created with `prisma db push`. It has no `_prisma_migrations` tab
 | --- | --- |
 | `20250226000000_baseline` | Records the schema that is already in production. **Mark it applied. Do not execute `migration.sql`.** It `CREATE`s every existing table and will fail if it is run. |
 | `20261102000000_phase1_rooms` | Additive only. Creates `Room`, `Player`, and `Turn` (MySQL `ENUM` columns inline), indexes, and foreign keys. Does not alter or delete existing tables or rows. |
+| `20261102120000_payment_status_expired_cancelled` | Additive only. Appends `CANCELLED` and `EXPIRED` to `Payment.status` and adds nullable `Payment.productId`. |
+| `20261102153000_add_home_order` | Additive only. Creates `HomeOrder` for the Tappen Home preorder. Does not alter existing tables. |
 
 `20260815023708_phase1_rooms` was removed. It recreated the whole schema and cannot be deployed onto production.
 
@@ -26,13 +28,13 @@ Do this only against production after an explicit go-ahead. These steps do not b
    DATABASE_URL="<production DATABASE_URL>" npx prisma migrate resolve --applied 20250226000000_baseline
    ```
 
-4. Apply the rooms migration. This is the only SQL that should run:
+4. Apply every migration that is not the baseline:
 
    ```bash
    DATABASE_URL="<production DATABASE_URL>" npx prisma migrate deploy
    ```
 
-   `migrate deploy` creates `_prisma_migrations` if needed, sees the baseline as already applied, and runs `20261102000000_phase1_rooms` only.
+   `migrate deploy` creates `_prisma_migrations` if needed, sees the baseline as already applied, and runs the later folders in order: `20261102000000_phase1_rooms`, `20261102120000_payment_status_expired_cancelled`, and `20261102153000_add_home_order`. Do not execute `20250226000000_baseline`.
 
 5. Start play with `npm start` (`NODE_ENV=production node server.js`).
 

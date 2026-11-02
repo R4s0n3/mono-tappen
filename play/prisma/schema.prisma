@@ -302,4 +302,37 @@ enum PlayerRole {
   CONTROLLER
 }
 
+/// Physical preorder of the boxed Tappen Home card set.
+/// Additive only. Migration: play/prisma/migrations/20261102153000_add_home_order.
+/// Sorts after 20261102120000_payment_status_expired_cancelled. Do not fold
+/// this model into 20250226000000_baseline.
+enum HomeOrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
+  SHIPPED
+}
 
+model HomeOrder {
+  id                    String          @id @default(cuid())
+  stripeSessionId       String          @unique
+  stripePaymentIntentId String?         @unique
+  email                 String?
+  name                  String?
+  /// Shipping address, one line per part.
+  address               String?         @db.Text
+  country               String?
+  quantity              Int
+  /// Total charged, in cents, including VAT and shipping.
+  amount                Int
+  /// Shipping portion of amount, in cents.
+  shippingAmount        Int?
+  currency              String          @default("eur")
+  status                HomeOrderStatus @default(PENDING)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@index([status])
+  @@index([email])
+}

@@ -81,11 +81,13 @@ export function StageView({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [drawError, setDrawError] = useState<string | null>(null);
   const intro = useDealIntro(state.status);
   const cardRef = useRef<LiveCardHandle>(null);
   const isHost = isHostSeat(state, seat);
 
   const advance = api.room.advance.useMutation({
+    onError: (err) => setDrawError(err.message),
     onSettled: () => setBusy(false),
   });
   const end = api.room.end.useMutation({
@@ -97,17 +99,23 @@ export function StageView({
 
   const handleAdvance = () => {
     setBusy(true);
+    setDrawError(null);
     advance.mutate({ roomId: state.roomId, token });
   };
 
   const requestAdvance = useCallback(async () => {
     setBusy(true);
+    setDrawError(null);
     try {
       await advance.mutateAsync({ roomId: state.roomId, token });
     } finally {
       setBusy(false);
     }
   }, [advance, state.roomId, token]);
+
+  const drawErrorNotice = drawError ? (
+    <p className="text-sm font-bold text-tappen-sunset-400">{drawError}</p>
+  ) : null;
 
   const handleEnd = () => {
     setBusy(true);
@@ -123,6 +131,7 @@ export function StageView({
           Playing <span className="font-bold text-tappen-sunset-300">{state.deckName}</span>
         </p>
         <PlayerList state={state} seat={seat} />
+        {drawErrorNotice}
         <button
           type="button"
           disabled={busy || state.players.length === 0}
@@ -196,6 +205,7 @@ export function StageView({
 
       <div className="flex w-full shrink-0 flex-col items-center gap-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <PlayerList state={state} seat={seat} />
+        {drawErrorNotice}
         {isHost && state.turn && (
           <>
             <p className="text-xs uppercase tracking-widest text-tappen-blue-300">

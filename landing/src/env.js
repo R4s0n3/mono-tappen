@@ -20,12 +20,19 @@ export const env = createEnv({
       // Since NextAuth.js automatically uses the VERCEL_URL if present.
       (str) => process.env.VERCEL_URL ?? str,
       // VERCEL_URL doesn't include `https` so it cant be validated as a URL
-      process.env.VERCEL ? z.string() : z.string().url()
+      process.env.VERCEL ? z.string() : z.string().url(),
     ),
     DISCORD_CLIENT_ID: z.string(),
     DISCORD_CLIENT_SECRET: z.string(),
     GOOGLE_CLIENT_ID: z.string(),
     GOOGLE_CLIENT_SECRET: z.string(),
+    // Same name as hub. Secret key only — Checkout is created on the server.
+    STRIPE_SECRET_KEY: z.string(),
+    // Signing secret for the landing webhook (Stripe CLI or Dashboard endpoint).
+    STRIPE_WEBHOOK_SECRET: z.string(),
+    // Tappen Home shipping, integer euro cents, VAT included. Germany and the rest of the EU.
+    HOME_SHIPPING_DE_CENTS: z.coerce.number().int().nonnegative(),
+    HOME_SHIPPING_EU_CENTS: z.coerce.number().int().nonnegative(),
   },
 
   /**
@@ -50,6 +57,10 @@ export const env = createEnv({
     DISCORD_CLIENT_SECRET: process.env.DISCORD_CLIENT_SECRET,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    HOME_SHIPPING_DE_CENTS: process.env.HOME_SHIPPING_DE_CENTS,
+    HOME_SHIPPING_EU_CENTS: process.env.HOME_SHIPPING_EU_CENTS,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
