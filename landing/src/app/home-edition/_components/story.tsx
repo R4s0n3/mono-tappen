@@ -65,9 +65,9 @@ export function HomeEditionStory({
               </a>
             </div>
           </div>
-          <div className="flex justify-center lg:justify-end">
+          <div className="flex w-full justify-center lg:justify-end">
             {heroCard ? (
-              <div className="rotate-2">
+              <div className="w-full max-w-xs rotate-2">
                 <SampleCard card={heroCard} />
               </div>
             ) : null}
@@ -116,11 +116,10 @@ export function HomeEditionStory({
               From the set
             </h2>
             <p className="mt-4 text-xl leading-relaxed text-tappen-blue-200">
-              Six prompts from the original deck, on the card the first Tappen
-              app used.
+              Six prompts from the original deck, on the card the app shows.
             </p>
           </div>
-          <div className="grid justify-items-center gap-10 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid w-full min-w-0 justify-items-stretch gap-10 sm:grid-cols-2 xl:grid-cols-3">
             {HOME_SAMPLES.map((card) => (
               <SampleCard key={card.text} card={card} />
             ))}

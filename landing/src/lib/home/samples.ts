@@ -10,7 +10,7 @@ export type SamplePrompt = {
  */
 export const HOME_SAMPLES: readonly SamplePrompt[] = [
   {
-    text: "When was the last time you did something for the first time?",
+    text: "What’s a skill you’d love to master overnight?",
     author: "Tappen",
   },
   {
