@@ -1,36 +1,36 @@
 export type SamplePrompt = {
   text: string;
-  /** Deal order printed on the stage card, same footer as play's LiveCard. */
-  turn: number;
+  author: string;
 };
 
 /**
- * Prompts from the official Tappen deck (`play/prisma/seed.js` CARDS).
- * The room deals these on the classic skin: light face, common frame.
+ * First prompts returned by the original app
+ * (`GET https://api.tappen.app/api/cards/published-cards`).
+ * Strings are copied as stored, including the original spelling.
  */
 export const HOME_SAMPLES: readonly SamplePrompt[] = [
   {
-    text: "Who here would you trust with your life?",
-    turn: 1,
+    text: "When was the last time you did something for the first time?",
+    author: "Tappen",
   },
   {
-    text: "What's the worst thing you've done to get out of plans?",
-    turn: 2,
+    text: "Whatˋs your biggest kitchen fail?",
+    author: "Tappen",
   },
   {
-    text: "Tell us about a secret you've never told this table.",
-    turn: 3,
+    text: "If there was a solution to your anxiety, how would it look like?",
+    author: "Tappen",
   },
   {
-    text: "What's the most embarrassing thing you've ever done in public?",
-    turn: 4,
+    text: "What do you like about yourself?",
+    author: "Tappen",
   },
   {
-    text: "Have you ever lied about your height?",
-    turn: 5,
+    text: "Do you miss someone at the moment?",
+    author: "Tappen",
   },
   {
-    text: "What's your guiltiest pleasure?",
-    turn: 6,
+    text: "What is the most embarrassing thing happend to you in school?",
+    author: "Tappen",
   },
 ];

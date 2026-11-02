@@ -116,8 +116,8 @@ export function HomeEditionStory({
               From the set
             </h2>
             <p className="mt-4 text-xl leading-relaxed text-tappen-blue-200">
-              Six prompts from the official Tappen deck, on the same card the
-              stage and the phones show in a room.
+              Six prompts from the original deck, on the card the first Tappen
+              app used.
             </p>
           </div>
           <div className="grid justify-items-center gap-10 sm:grid-cols-2 xl:grid-cols-3">
