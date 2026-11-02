@@ -74,8 +74,10 @@ export function StageView({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [drawError, setDrawError] = useState<string | null>(null);
 
   const advance = api.room.advance.useMutation({
+    onError: (err) => setDrawError(err.message),
     onSettled: () => setBusy(false),
   });
   const end = api.room.end.useMutation({
@@ -87,8 +89,13 @@ export function StageView({
 
   const handleAdvance = () => {
     setBusy(true);
+    setDrawError(null);
     advance.mutate({ roomId: state.roomId, token });
   };
+
+  const drawErrorNotice = drawError ? (
+    <p className="text-sm font-bold text-tappen-sunset-400">{drawError}</p>
+  ) : null;
 
   const handleEnd = () => {
     setBusy(true);
@@ -104,6 +111,7 @@ export function StageView({
           Playing <span className="font-bold text-tappen-sunset-300">{state.deckName}</span>
         </p>
         <PlayerList state={state} seat={seat} />
+        {drawErrorNotice}
         <button
           type="button"
           disabled={busy || state.players.length === 0}
@@ -173,6 +181,7 @@ export function StageView({
 
       <div className="flex w-full max-w-xl flex-col items-center gap-4">
         <PlayerList state={state} seat={seat} />
+        {drawErrorNotice}
         <button
           type="button"
           disabled={busy}
