@@ -149,13 +149,13 @@ model Room {
   id        String     @id @default(cuid())
   code      String     @unique
   status    RoomStatus @default(LOBBY)
-  hostId    String     @unique
+  hostId    String?    @unique
   deckId    String?
   createdAt DateTime   @default(now())
   endedAt   DateTime?
   players   Player[]   @relation("RoomMembership")
   turns     Turn[]
-  host      Player     @relation("RoomHost", fields: [hostId], references: [id])
+  host      Player?    @relation("RoomHost", fields: [hostId], references: [id])
   deck      Deck?      @relation(fields: [deckId], references: [id])
 
   @@index([deckId], map: "Room_deckId_fkey")
@@ -301,3 +301,5 @@ enum PlayerRole {
   STAGE
   CONTROLLER
 }
+
+
