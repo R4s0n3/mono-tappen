@@ -1,0 +1,15 @@
+
+.fontStyle_dark {
+    @apply text-tappen-blue-900;
+    @apply text-left;
+}
+.fontStyle_mid {
+    @apply text-tappen-blue-500;
+    @apply text-left;
+
+}   
+.fontStyle_light {
+    @apply text-tappen-blue-100;
+    @apply text-left;
+
+}

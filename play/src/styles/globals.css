@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+    background-color: #1d1f2f;
+}
+
+@import url('./skin/font/colors.css');
+
+@keyframes liquidBorder {
+    0% {
+        background-size: 250% 250%;
+        background-position: 0% 50%;
+    }
+    25% {
+        background-position: 50% 100%;
+        background-size: 200% 200%;
+    }
+    50% {
+        background-position: 100% 50%;
+        background-size: 250% 250%;
+    }
+    75% {
+        background-position: 50% 0%;
+        background-size: 200% 200%;
+    }
+    100% {
+        background-position: 0% 50%;
+        background-size: 250% 250%;
+    }
+}
+
+
+@keyframes glowBorder {
+    0%, 100% {
+        filter: brightness(1); /* Normal brightness */
+        opacity: 1;
+        box-shadow: 0 0 5px currentColor, 0 0 10px currentColor;
+    }
+    50% {
+        filter: brightness(1.5); /* Increased brightness */
+        opacity: 0.8;
+        box-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+    }
+}
+
+/* width */
+::-webkit-scrollbar {
+    width: 3px;
+}
+ 
+/* Track */
+::-webkit-scrollbar-track {
+   @apply bg-tappen-blue-900 p-1;
+   
+}
+ 
+/* Handle */
+::-webkit-scrollbar-thumb {
+    @apply bg-tappen-purple-500 hover:bg-tappen-purple-400 rounded;
+
+}
+
+.tappen-swipe-card {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+.tappen-swipe-card * {
+    -webkit-user-drag: none;
+    user-select: none;
+}
+ 

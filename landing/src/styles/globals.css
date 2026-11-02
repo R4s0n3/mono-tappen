@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('./skin//borders/animations.css');
+@import url('./skin//borders/styles.css');
+@import url('./skin/font/colors.css');
+
+body{
+    scroll-behavior: smooth;
+}

@@ -1,0 +1,298 @@
+// Ѫ
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model SkinFont {
+  id    String @id @default(cuid())
+  type  String
+  color String
+  skin  Skin?
+}
+
+model SkinBorder {
+  id     String @id @default(cuid())
+  frame  String
+  rarity Rarity
+  skin   Skin?
+}
+
+model SkinBackground {
+  id        String  @id @default(cuid())
+  type      String
+  animation String
+  primary   String
+  secondary String
+  highlight String?
+  skin      Skin?
+}
+
+model Skin {
+  id String @id @default(cuid())
+
+  name  String
+  price Int
+
+  background SkinBackground @relation(fields: [skinBackgroundId], references: [id], onDelete: Cascade)
+  border     SkinBorder     @relation(fields: [skinBorderId], references: [id], onDelete: Cascade)
+  font       SkinFont       @relation(fields: [skinFontId], references: [id], onDelete: Cascade)
+
+  skinBackgroundId String @unique
+  skinBorderId     String @unique
+  skinFontId       String @unique
+
+  users    UserSkin[]
+  cards    Card[]
+  products Product[]
+}
+
+model UserSkin {
+  id String @default(cuid())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+  skin   Skin   @relation(fields: [skinId], references: [id])
+  skinId String
+
+  acquiredAt DateTime @default(now())
+
+  @@id([userId, skinId]) // Composite primary key
+}
+
+model Card {
+  idx Int @id @default(autoincrement())
+
+  cardId   String @unique @default(cuid())
+  skinId   String
+  authorId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  content String
+  nsfw    Boolean
+  visible Visibility
+  tags    Tag[]      @relation("CardToTag")
+  author  User       @relation(fields: [authorId], references: [id])
+
+  skin Skin @relation(fields: [skinId], references: [id])
+
+  health Int @default(1000000)
+
+  decks   Deck[] @relation("CardToDeck")
+  likedBy User[] @relation("CardLikesToUser")
+  turns   Turn[]
+
+  @@index([authorId], map: "Card_authorId_fkey")
+  @@index([skinId], map: "Card_skinId_fkey")
+}
+
+model Tag {
+  id    String @id @default(cuid())
+  name  String @unique
+  cards Card[] @relation("CardToTag")
+}
+
+model Account {
+  id                       String  @id @default(cuid())
+  userId                   String
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String? @db.Text
+  access_token             String? @db.Text
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String? @db.Text
+  session_state            String?
+  refresh_token_expires_in Int?
+  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId], map: "Account_userId_fkey")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "Session_userId_fkey")
+}
+
+model Deck {
+  id        String    @id @default(cuid())
+  name      String?
+  image     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  creatorId String
+  creator   User      @relation(fields: [creatorId], references: [id])
+  cards     Card[]    @relation("CardToDeck")
+  likedBy   User[]    @relation("DeckLikesToUser")
+  rooms     Room[]
+
+  @@index([creatorId], map: "Deck_creatorId_fkey")
+}
+
+model Room {
+  id        String     @id @default(cuid())
+  code      String     @unique
+  status    RoomStatus @default(LOBBY)
+  hostId    String     @unique
+  deckId    String?
+  createdAt DateTime   @default(now())
+  endedAt   DateTime?
+  players   Player[]   @relation("RoomMembership")
+  turns     Turn[]
+  host      Player     @relation("RoomHost", fields: [hostId], references: [id])
+  deck      Deck?      @relation(fields: [deckId], references: [id])
+
+  @@index([deckId], map: "Room_deckId_fkey")
+  @@index([hostId], map: "Room_hostId_fkey")
+}
+
+model Player {
+  id              String     @id @default(cuid())
+  roomId          String
+  displayName     String
+  role            PlayerRole
+  userId          String?
+  connectionToken String     @unique @default(cuid())
+  isConnected     Boolean    @default(true)
+  lastSeenAt      DateTime?
+  joinedAt        DateTime   @default(now())
+  claimedAt       DateTime?
+  room            Room       @relation("RoomMembership", fields: [roomId], references: [id], onDelete: Cascade)
+  hostOf          Room?      @relation("RoomHost")
+  user            User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  turns           Turn[]     @relation("TurnTarget")
+
+  @@index([roomId], map: "Player_roomId_fkey")
+  @@index([userId], map: "Player_userId_fkey")
+}
+
+model Turn {
+  id         String    @id @default(cuid())
+  roomId     String
+  cardId     String
+  targetId   String?
+  sequence   Int
+  startedAt  DateTime  @default(now())
+  resolvedAt DateTime?
+  room       Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  card       Card      @relation(fields: [cardId], references: [cardId])
+  target     Player?   @relation("TurnTarget", fields: [targetId], references: [id])
+
+  @@index([roomId, sequence], map: "Turn_roomId_sequence_idx")
+  @@index([cardId], map: "Turn_cardId_fkey")
+  @@index([targetId], map: "Turn_targetId_fkey")
+}
+
+model User {
+  id            String        @id @default(cuid())
+  name          String?
+  email         String?       @unique
+  emailVerified DateTime?
+  image         String?
+  paymentId     String?
+  accounts      Account[]
+  cards         Card[]
+  decks         Deck[]
+  sessions      Session[]
+  owned_skins   UserSkin[]
+  payments      Payment[]
+  liked_cards   Card[]        @relation("CardLikesToUser")
+  liked_decks   Deck[]        @relation("DeckLikesToUser")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+  last_newName  DateTime?
+  subscription  Subscription?
+  players       Player[]
+}
+
+model Subscription {
+  id        Int       @id @default(autoincrement())
+  userId    String    @unique
+  stripeId  String // Store Stripe subscription ID for reference
+  status    String
+  endsAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  price       Int
+  type        ProductType // ENUM to indicate SKIN, BUNDLE, or SUBSCRIPTION
+  skins       Skin[]
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  shopId      String?       @unique
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  purchasedAt DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  status      PaymentStatus @default(PENDING)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum Rarity {
+  common
+  rare
+  epic
+  legendary
+}
+
+enum Visibility {
+  PUBLIC
+  SHARED
+  PRIVATE
+}
+
+enum ProductType {
+  SKIN
+  BUNDLE
+  SUBSCRIPTION
+}
+
+enum RoomStatus {
+  LOBBY
+  ACTIVE
+  ENDED
+}
+
+enum PlayerRole {
+  STAGE
+  CONTROLLER
+}
