@@ -2,13 +2,13 @@
 import { api } from "@/trpc/react"
 import { ArrowPathIcon, ChevronLeftIcon } from "@heroicons/react/24/solid"
 import { EyeIcon } from "@heroicons/react/24/outline";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 
 import CardSkin from "@/app/_components/tappen-card/_elements/card-skin";
 
-type SkinProductProps = {
+type SkinProductProps = {
     skin:string,
     user: string
 }
@@ -17,21 +17,25 @@ type SkinProductProps = {
 export default function SkinProduct(props:SkinProductProps){
 
 const router = useRouter()
+const started = useRef(false)
 
     const {skin, user} = props
 
-
-    const {data:intentResponse, isLoading, isError, error} = api.payment.createSkinIntent.useQuery(({skin, userId:user}),{
-        retry:2
-    })
+    const { mutate, data: intentResponse, isPending, isError, error } = api.payment.createSkinIntent.useMutation()
 
   useEffect(() => {
-    if(intentResponse && intentResponse.checkout_session !== null){
+    if (started.current) return
+    started.current = true
+    mutate({ skin, userId: user })
+  }, [mutate, skin, user])
+
+  useEffect(() => {
+    if(intentResponse?.checkout_session){
       router.push(intentResponse.checkout_session)
     }
   },[intentResponse, router])
 
-    if(!intentResponse && isLoading)return <span className="animate-spin"><ArrowPathIcon className="size-8"/></span>
+    if(isPending || (!intentResponse && !isError))return <span className="animate-spin"><ArrowPathIcon className="size-8"/></span>
 
     return <div className="w-full flex flex-col gap-8 justify-center items-center max-w-screen-lg ">
 <button 
@@ -54,7 +58,7 @@ const router = useRouter()
         <div className="flex-1">
  
   
-      {!intentResponse?.checkout_session && isError && <span className="flex h-full flex-col justify-center items-center font-mono text-xl text-tappen-purple-500">{error.message}</span>}
+      {isError && <span className="flex h-full flex-col justify-center items-center font-mono text-xl text-tappen-purple-500">{error.message}</span>}
         </div>
       </div>
     </div>

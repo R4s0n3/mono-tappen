@@ -20,6 +20,15 @@ export const prisma =
 const DECK_PLAYER = "Tappen";
 const DECK_EMAIL = "admio@tappen.app";
 
+/**
+ * Cards a room can draw. listDecks counts with this same predicate so the
+ * host picker never offers a deck that advance will reject as empty.
+ */
+export const playableCardWhere = {
+  nsfw: false,
+  visible: "PUBLIC",
+};
+
 export function playerPublic(p) {
   return {
     id: p.id,
@@ -109,8 +118,7 @@ export async function getRoomCardPool(roomId) {
     const cards = await prisma.card.findMany({
       where: {
         decks: { some: { id: room.deckId } },
-        nsfw: false,
-        visible: "PUBLIC",
+        ...playableCardWhere,
       },
       select: { cardId: true },
     });
@@ -120,8 +128,7 @@ export async function getRoomCardPool(roomId) {
   const cards = await prisma.card.findMany({
     where: {
       author: { name: DECK_PLAYER, email: DECK_EMAIL, emailVerified: { not: null } },
-      nsfw: false,
-      visible: "PUBLIC",
+      ...playableCardWhere,
       health: { gte: 700000 },
     },
     select: { cardId: true },

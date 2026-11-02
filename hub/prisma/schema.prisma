@@ -149,13 +149,13 @@ model Room {
   id        String     @id @default(cuid())
   code      String     @unique
   status    RoomStatus @default(LOBBY)
-  hostId    String     @unique
+  hostId    String?    @unique
   deckId    String?
   createdAt DateTime   @default(now())
   endedAt   DateTime?
   players   Player[]   @relation("RoomMembership")
   turns     Turn[]
-  host      Player     @relation("RoomHost", fields: [hostId], references: [id])
+  host      Player?    @relation("RoomHost", fields: [hostId], references: [id])
   deck      Deck?      @relation(fields: [deckId], references: [id])
 
   @@index([deckId], map: "Room_deckId_fkey")
@@ -240,6 +240,7 @@ model Product {
   price       Int
   type        ProductType // ENUM to indicate SKIN, BUNDLE, or SUBSCRIPTION
   skins       Skin[]
+  payments    Payment[]
 }
 
 model Payment {
@@ -247,6 +248,8 @@ model Payment {
   shopId      String?       @unique
   userId      String
   user        User          @relation(fields: [userId], references: [id])
+  productId   String?
+  product     Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
   purchasedAt DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   status      PaymentStatus @default(PENDING)
@@ -265,6 +268,8 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   REFUNDED
+  CANCELLED
+  EXPIRED
 }
 
 enum Rarity {
@@ -298,9 +303,9 @@ enum PlayerRole {
 }
 
 /// Physical preorder of the boxed Tappen Home card set.
-/// Additive only. Migration: play/prisma/migrations/*_add_home_order.
-/// Apply it after the baseline from branch migration-baseline-phase1, which
-/// unifies hub/landing/play schemas. Do not fold this model into that baseline.
+/// Additive only. Migration: play/prisma/migrations/20261102153000_add_home_order.
+/// Sorts after 20261102120000_payment_status_expired_cancelled. Do not fold
+/// this model into 20250226000000_baseline.
 enum HomeOrderStatus {
   PENDING
   PAID

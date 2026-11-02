@@ -4,7 +4,6 @@ import { TRPCReactProvider } from "@/trpc/react";
 import { Playfair_Display, Titillium_Web, Lilita_One } from "next/font/google";
 
 import type { Metadata, Viewport } from "next";
-import GoogleAdsense from "./_components/adsense";
 import { PWARegister } from "./_components/pwa-register";
 
 
@@ -50,8 +49,6 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-const googleId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID
-
 export default function RootLayout({
   children,
 }: {
@@ -83,7 +80,6 @@ export default function RootLayout({
           {children}
         </TRPCReactProvider>
       </body>
-     {googleId && <GoogleAdsense pId={googleId} />}
     </html>
   );
 }
