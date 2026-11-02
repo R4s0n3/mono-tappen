@@ -1,45 +1,36 @@
-export type SampleSkin = "classic" | "grove" | "night" | "gold";
-
 export type SamplePrompt = {
   text: string;
-  /** True when the print set marks this card as new (proposed=true). */
-  proposed: boolean;
-  skin: SampleSkin;
+  author: string;
 };
 
 /**
- * A handful of prompts from the final print set (`text` column).
- * `proposed` cards are the new questions added for this box.
+ * First prompts returned by the original app
+ * (`GET https://api.tappen.app/api/cards/published-cards`).
+ * Strings are copied as stored, including the original spelling.
  */
 export const HOME_SAMPLES: readonly SamplePrompt[] = [
   {
+    text: "When was the last time you did something for the first time?",
+    author: "Tappen",
+  },
+  {
+    text: "Whatˋs your biggest kitchen fail?",
+    author: "Tappen",
+  },
+  {
+    text: "If there was a solution to your anxiety, how would it look like?",
+    author: "Tappen",
+  },
+  {
+    text: "What do you like about yourself?",
+    author: "Tappen",
+  },
+  {
     text: "Do you miss someone at the moment?",
-    proposed: false,
-    skin: "classic",
+    author: "Tappen",
   },
   {
-    text: "If money was not a factor, how would you live your life?",
-    proposed: false,
-    skin: "grove",
-  },
-  {
-    text: "What’s the most embarrassing thing that happened to you at school?",
-    proposed: false,
-    skin: "night",
-  },
-  {
-    text: "Who at this table would survive the longest in a zombie apocalypse?",
-    proposed: true,
-    skin: "gold",
-  },
-  {
-    text: "What’s something you pretend to understand but secretly don’t?",
-    proposed: true,
-    skin: "grove",
-  },
-  {
-    text: "What’s a small moment that changed the direction of your life?",
-    proposed: true,
-    skin: "classic",
+    text: "What is the most embarrassing thing happend to you in school?",
+    author: "Tappen",
   },
 ];

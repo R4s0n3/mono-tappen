@@ -22,7 +22,7 @@ export function HomeEditionStory({
   deCents: number;
   euCents: number;
 }) {
-  const heroCard = HOME_SAMPLES.find((card) => card.proposed);
+  const heroCard = HOME_SAMPLES[0];
 
   return (
     <>
@@ -116,8 +116,8 @@ export function HomeEditionStory({
               From the set
             </h2>
             <p className="mt-4 text-xl leading-relaxed text-tappen-blue-200">
-              Six of the hundred. Cards marked “New card” are in this print set
-              for the first time. The rest are originals.
+              Six prompts from the original deck, on the card the first Tappen
+              app used.
             </p>
           </div>
           <div className="grid justify-items-center gap-10 sm:grid-cols-2 xl:grid-cols-3">
