@@ -6,7 +6,7 @@ import {
   protectedProcedure,
   publicProcedure,
 } from "@/server/api/trpc";
-import { buildRoomState, getRoomCardPool } from "@/server/realtime/snapshot";
+import { buildRoomState, getRoomCardPool, playableCardWhere } from "@/server/realtime/snapshot";
 import { hub } from "@/server/realtime/hub";
 import { logIntent } from "@/server/observability";
 import type { db as DbClient } from "@/server/db";
@@ -56,24 +56,39 @@ function assertStage(player: { role: string }) {
 }
 
 export const roomRouter = createTRPCRouter({
-  /** Decks a host can start a room with (deckId null = built-in Tappen pool). */
+  /**
+   * Decks a host can start a room with (deckId null = built-in Tappen pool).
+   * Deck has no visibility or sharing field — only an owner — so signed-in
+   * hosts see their own decks, and anonymous hosts see none (the client
+   * always offers the built-in Tappen deck). Counts match getRoomCardPool:
+   * nsfw cards and non-public cards are not playable.
+   */
   listDecks: publicProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session?.user.id;
+    if (!userId) return [];
+
     const decks = await ctx.db.deck.findMany({
-      where: { deletedAt: null },
+      where: {
+        deletedAt: null,
+        creatorId: userId,
+        cards: { some: playableCardWhere },
+      },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
         name: true,
         image: true,
-        _count: { select: { cards: true } },
+        _count: { select: { cards: { where: playableCardWhere } } },
       },
     });
-    return decks.map((d) => ({
-      id: d.id,
-      name: d.name ?? "Untitled deck",
-      image: d.image,
-      cardCount: d._count.cards,
-    }));
+    return decks
+      .filter((d) => d._count.cards > 0)
+      .map((d) => ({
+        id: d.id,
+        name: d.name ?? "Untitled deck",
+        image: d.image,
+        cardCount: d._count.cards,
+      }));
   }),
 
   /** Stage: create a room, become host. */

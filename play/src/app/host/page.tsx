@@ -9,7 +9,8 @@ import { saveSeat } from "@/app/_components/rooms/seat";
 
 function HostForm() {
   const router = useRouter();
-  const [deckId, setDeckId] = useState<string | null>(null);
+  // null is the built-in Tappen deck (preselected). undefined means nothing is chosen yet.
+  const [deckId, setDeckId] = useState<string | null | undefined>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { data: decks, isLoading } = api.room.listDecks.useQuery();
@@ -83,8 +84,8 @@ function HostForm() {
       {error && <p className="text-sm font-bold text-tappen-sunset-400">{error}</p>}
       <button
         type="button"
-        disabled={create.isPending || deckId === null}
-        onClick={() => create.mutate({ deckId })}
+        disabled={create.isPending || deckId === undefined}
+        onClick={() => create.mutate({ deckId: deckId ?? null })}
         className="font-lilita-one rounded-full bg-tappen-sunset-500 py-4 text-xl text-tappen-blue-900 transition hover:bg-tappen-sunset-400 disabled:opacity-40"
       >
         {create.isPending ? "Starting…" : "Start a night"}
