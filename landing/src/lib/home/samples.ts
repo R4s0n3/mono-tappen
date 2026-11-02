@@ -1,45 +1,36 @@
-export type SampleSkin = "classic" | "grove" | "night" | "gold";
-
 export type SamplePrompt = {
   text: string;
-  /** True when the print set marks this card as new (proposed=true). */
-  proposed: boolean;
-  skin: SampleSkin;
+  /** Deal order printed on the stage card, same footer as play's LiveCard. */
+  turn: number;
 };
 
 /**
- * A handful of prompts from the final print set (`text` column).
- * `proposed` cards are the new questions added for this box.
+ * Prompts from the official Tappen deck (`play/prisma/seed.js` CARDS).
+ * The room deals these on the classic skin: light face, common frame.
  */
 export const HOME_SAMPLES: readonly SamplePrompt[] = [
   {
-    text: "Do you miss someone at the moment?",
-    proposed: false,
-    skin: "classic",
+    text: "Who here would you trust with your life?",
+    turn: 1,
   },
   {
-    text: "If money was not a factor, how would you live your life?",
-    proposed: false,
-    skin: "grove",
+    text: "What's the worst thing you've done to get out of plans?",
+    turn: 2,
   },
   {
-    text: "What’s the most embarrassing thing that happened to you at school?",
-    proposed: false,
-    skin: "night",
+    text: "Tell us about a secret you've never told this table.",
+    turn: 3,
   },
   {
-    text: "Who at this table would survive the longest in a zombie apocalypse?",
-    proposed: true,
-    skin: "gold",
+    text: "What's the most embarrassing thing you've ever done in public?",
+    turn: 4,
   },
   {
-    text: "What’s something you pretend to understand but secretly don’t?",
-    proposed: true,
-    skin: "grove",
+    text: "Have you ever lied about your height?",
+    turn: 5,
   },
   {
-    text: "What’s a small moment that changed the direction of your life?",
-    proposed: true,
-    skin: "classic",
+    text: "What's your guiltiest pleasure?",
+    turn: 6,
   },
 ];

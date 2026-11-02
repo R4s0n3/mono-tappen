@@ -9,8 +9,7 @@ import {
 } from "@/lib/home/product";
 
 export function HomeEdition() {
-  const featured =
-    HOME_SAMPLES.find((card) => card.proposed) ?? HOME_SAMPLES[0];
+  const featured = HOME_SAMPLES[0];
 
   return (
     <section
