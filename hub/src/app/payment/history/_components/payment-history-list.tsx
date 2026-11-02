@@ -6,10 +6,10 @@ import Link from "next/link"
 
 type PaymentItem = {
     id:string,
-    shopId: string,
+    shopId: string | null,
     purchasedAt: Date,
     status: string,
-    receiptUrl:string,
+    receiptUrl: string | null,
     type: string
   }
   
@@ -17,16 +17,10 @@ type PaymentItem = {
   export default function PaymentHistoryList(props: {history: PaymentItem[]}){
   
     const {history} = props
-    function createListItems(item:PaymentItem, idx:number){
-      return <ListItem
-        key={idx} 
-        {...item}
-      />
-    }
     return <div className="w-full max-w-md gap-2 flex flex-col">
       <h2 className="text-2xl font-bold underline underline-offset-2">PAYMENT HISTORY</h2>
       <ul className="flex flex-col w-full rounded border-2 p-0.5 border-tappen-blue-500 bg-tappen-blue-400 max-h-72 overflow-y-auto">
-      {history?.map(createListItems)}
+      {history.map((item) => <ListItem key={item.id} {...item} />)}
       </ul>
     </div>
   }
@@ -34,23 +28,22 @@ type PaymentItem = {
   
   function ListItem(item: PaymentItem){
     const { id, shopId, purchasedAt, status, receiptUrl, type } = item
+    const canLoadReceipt = (status === "COMPLETED" || status === "REFUNDED") && Boolean(shopId)
     const { data: receipt, isLoading } = api.payment.getBill.useQuery(
-        shopId,
-        // Only fetch if we don't already have the receipt URL
-        { enabled: !receiptUrl }
+        shopId ?? "missing",
+        { enabled: canLoadReceipt && !receiptUrl }
       );
-    console.log(receipt)
-    const receipt_url = receiptUrl || receipt;
+    const receiptLink = receiptUrl ?? receipt ?? null;
 
     return <li id={id} className="w-full flex gap-2 flex-col bg-tappen-blue-400 p-2 border-b border-b-tappen-blue-500">
       <div className="flex justify-between ">
     <span className="font-bold text-xs">TYPE: {type} </span>
-    <span className="font-bold text-xs">{purchasedAt.toLocaleDateString()}</span>
+    <span className="font-bold text-xs">{new Date(purchasedAt).toLocaleDateString()}</span>
       </div>
       <div className="flex justify-between">
     <span>status: {status.toLocaleLowerCase()}</span>
-    {receipt && <Link className="flex gap-2"  href={receipt_url ?? ""} target="_blank" >Receipt <DocumentCurrencyEuroIcon className="size-6" /></Link>}
-    {isLoading && !receipt && <ArrowPathIcon className="size-6 animate-spin"/>}
+    {receiptLink && <Link className="flex gap-2" href={receiptLink} target="_blank" >Receipt <DocumentCurrencyEuroIcon className="size-6" /></Link>}
+    {isLoading && !receiptLink && <ArrowPathIcon className="size-6 animate-spin"/>}
       </div>
     </li>
   }

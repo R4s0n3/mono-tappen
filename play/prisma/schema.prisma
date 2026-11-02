@@ -240,6 +240,7 @@ model Product {
   price       Int
   type        ProductType // ENUM to indicate SKIN, BUNDLE, or SUBSCRIPTION
   skins       Skin[]
+  payments    Payment[]
 }
 
 model Payment {
@@ -247,6 +248,8 @@ model Payment {
   shopId      String?       @unique
   userId      String
   user        User          @relation(fields: [userId], references: [id])
+  productId   String?
+  product     Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
   purchasedAt DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   status      PaymentStatus @default(PENDING)
@@ -265,6 +268,8 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   REFUNDED
+  CANCELLED
+  EXPIRED
 }
 
 enum Rarity {
