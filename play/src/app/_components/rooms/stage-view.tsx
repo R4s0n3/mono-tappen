@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/trpc/react";
-import TappenCard from "../tappen-card/tappen-card";
-import type { RoomState, Seat } from "./types";
+import type { CardSocket, RoomState, Seat } from "./types";
 import { forgetSeat } from "./seat";
+import { LiveCard, useDealIntro, type LiveCardHandle } from "./live-card";
 
 function CopyCode({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
@@ -63,18 +63,28 @@ function PlayerList({ state, seat }: { state: RoomState; seat: Seat }) {
   );
 }
 
+function isHostSeat(state: RoomState, seat: Seat) {
+  if (state.hostId) return state.hostId === seat.playerId;
+  return seat.role === "STAGE";
+}
+
 export function StageView({
   state,
   seat,
   token,
+  socket,
 }: {
   state: RoomState;
   seat: Seat;
   token: string;
+  socket: CardSocket;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [drawError, setDrawError] = useState<string | null>(null);
+  const intro = useDealIntro(state.status);
+  const cardRef = useRef<LiveCardHandle>(null);
+  const isHost = isHostSeat(state, seat);
 
   const advance = api.room.advance.useMutation({
     onError: (err) => setDrawError(err.message),
@@ -92,6 +102,16 @@ export function StageView({
     setDrawError(null);
     advance.mutate({ roomId: state.roomId, token });
   };
+
+  const requestAdvance = useCallback(async () => {
+    setBusy(true);
+    setDrawError(null);
+    try {
+      await advance.mutateAsync({ roomId: state.roomId, token });
+    } finally {
+      setBusy(false);
+    }
+  }, [advance, state.roomId, token]);
 
   const drawErrorNotice = drawError ? (
     <p className="text-sm font-bold text-tappen-sunset-400">{drawError}</p>
@@ -147,10 +167,10 @@ export function StageView({
     );
   }
 
-  // ACTIVE
+  // ACTIVE — the host moves the card; everyone else mirrors it.
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-between gap-6 bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 p-6 pt-10 text-tappen-blue-100">
-      <div className="flex w-full max-w-2xl items-center justify-between gap-4">
+    <div className="flex h-dvh flex-col overflow-hidden overscroll-none bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 text-tappen-blue-100">
+      <div className="flex w-full shrink-0 items-center justify-between gap-4 px-4 pb-2 pt-[max(1.25rem,env(safe-area-inset-top))]">
         <span className="rounded-full bg-tappen-blue-800 px-4 py-1.5 text-sm font-bold text-tappen-sunset-300">
           {state.deckName} · turn {state.turn?.sequence ?? "?"}
         </span>
@@ -164,32 +184,43 @@ export function StageView({
         </button>
       </div>
 
-      <div className="flex w-full max-w-xl flex-1 items-center justify-center">
-        {state.turn?.content ? (
-          <TappenCard skin={state.turn.skinId}>
-            <div className="flex size-full flex-col justify-between p-6 text-tappen-blue-50 font-serif">
-              <p className="flex-1 text-3xl md:text-4xl">{state.turn.content}</p>
-              <div className="mt-6 text-center text-sm uppercase tracking-widest text-tappen-blue-400">
-                turn {state.turn.sequence}
-              </div>
-            </div>
-          </TappenCard>
-        ) : (
-          <p className="text-tappen-blue-300">No card yet — draw the first one.</p>
-        )}
-      </div>
+      {state.turn ? (
+        <LiveCard
+          ref={cardRef}
+          content={state.turn.content}
+          skinId={state.turn.skinId}
+          sequence={state.turn.sequence}
+          interactive={isHost}
+          canAdvance={isHost}
+          intro={intro}
+          variant="stage"
+          socket={socket}
+          onAdvance={requestAdvance}
+        />
+      ) : (
+        <p className="flex flex-1 items-center justify-center text-tappen-blue-300">
+          No card yet — draw the first one.
+        </p>
+      )}
 
-      <div className="flex w-full max-w-xl flex-col items-center gap-4">
+      <div className="flex w-full shrink-0 flex-col items-center gap-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <PlayerList state={state} seat={seat} />
         {drawErrorNotice}
-        <button
-          type="button"
-          disabled={busy}
-          onClick={handleAdvance}
-          className="font-lilita-one w-full max-w-md rounded-full bg-tappen-sunset-500 py-5 text-3xl text-tappen-blue-900 transition hover:bg-tappen-sunset-400 active:scale-95 disabled:opacity-40"
-        >
-          Next card
-        </button>
+        {isHost && state.turn && (
+          <>
+            <p className="text-xs uppercase tracking-widest text-tappen-blue-300">
+              drag · tap to flip · swipe for the next card
+            </p>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => cardRef.current?.swipeAway(1)}
+              className="font-lilita-one w-full max-w-md rounded-full bg-tappen-sunset-500 py-3 text-2xl text-tappen-blue-900 transition hover:bg-tappen-sunset-400 active:scale-95 disabled:opacity-40"
+            >
+              Next card
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

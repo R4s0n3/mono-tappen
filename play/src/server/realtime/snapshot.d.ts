@@ -5,12 +5,9 @@ export interface RoomPlayerPublic {
   isConnected: boolean;
 }
 
-export interface ControllerTurnState {
+export interface TurnState {
   sequence: number;
   deckName: string;
-}
-
-export interface StageTurnState extends ControllerTurnState {
   cardId: string;
   content: string;
   skinId: string;
@@ -28,18 +25,15 @@ export interface RoomStateBase {
   players: RoomPlayerPublic[];
 }
 
-export interface StageRoomState extends RoomStateBase {
-  turn: StageTurnState | null;
-}
-
-export interface ControllerRoomState extends RoomStateBase {
-  turn: ControllerTurnState | null;
+/** Stage and controllers receive the same card face. */
+export interface RoomState extends RoomStateBase {
+  turn: TurnState | null;
 }
 
 export function buildRoomState(
   roomId: string,
   role: "STAGE" | "CONTROLLER",
-): Promise<(StageRoomState | ControllerRoomState) | null>;
+): Promise<RoomState | null>;
 
 export function getRoomCardPool(roomId: string): Promise<string[]>;
 

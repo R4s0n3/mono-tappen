@@ -12,6 +12,7 @@
     "dev": "node server.js",
     "postinstall": "prisma generate",
     "lint": "next lint",
+    "sim:card": "node scripts/ws-card-relay.mjs",
     "start": "NODE_ENV=production node server.js"
   },
   "dependencies": {

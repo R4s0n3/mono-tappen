@@ -17,10 +17,16 @@ export function RoomView({ roomId }: { roomId: string }) {
     { enabled },
   );
 
-  const { state, error } = useRoomSocket(
+  const { state, error, send, subscribeTransform, getTransform } = useRoomSocket(
     roomId,
     seat?.token ?? null,
     enabled,
+    initial?.cardTransform,
+  );
+
+  const socket = useMemo(
+    () => ({ send, subscribeTransform, getTransform }),
+    [send, subscribeTransform, getTransform],
   );
 
   const current = state ?? initial ?? null;
@@ -70,9 +76,9 @@ export function RoomView({ roomId }: { roomId: string }) {
   return (
     <>
       {isStage ? (
-        <StageView state={current} seat={seat} token={seat.token} />
+        <StageView state={current} seat={seat} token={seat.token} socket={socket} />
       ) : (
-        <ControllerView state={current} seat={seat} />
+        <ControllerView state={current} seat={seat} socket={socket} />
       )}
     </>
   );

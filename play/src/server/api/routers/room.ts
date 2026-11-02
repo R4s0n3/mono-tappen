@@ -8,6 +8,7 @@ import {
 } from "@/server/api/trpc";
 import { buildRoomState, getRoomCardPool, playableCardWhere } from "@/server/realtime/snapshot";
 import { hub } from "@/server/realtime/hub";
+import type { CardTransform } from "@/shared/card-transform";
 import { logIntent } from "@/server/observability";
 import type { db as DbClient } from "@/server/db";
 
@@ -53,6 +54,13 @@ function assertStage(player: { role: string }) {
   if (player.role !== "STAGE") {
     throw new TRPCError({ code: "FORBIDDEN", message: "only the stage can do this" });
   }
+}
+
+async function roomView(roomId: string, role: "STAGE" | "CONTROLLER") {
+  const state = await buildRoomState(roomId, role);
+  if (!state) return null;
+  const cardTransform: CardTransform = hub.getCardTransform(roomId);
+  return { ...state, cardTransform };
 }
 
 export const roomRouter = createTRPCRouter({
@@ -136,7 +144,7 @@ export const roomRouter = createTRPCRouter({
 
       logIntent(host.roomId, host.id, "room.create", { deckId: deck?.id ?? null });
 
-      const state = await buildRoomState(host.roomId, "STAGE");
+      const state = await roomView(host.roomId, "STAGE");
       return {
         roomId: host.roomId,
         token: host.connectionToken,
@@ -176,7 +184,7 @@ export const roomRouter = createTRPCRouter({
             where: { id: existing.id },
             data: { isConnected: true, lastSeenAt: new Date() },
           });
-          const state = await buildRoomState(room.id, existing.role);
+          const state = await roomView(room.id, existing.role);
           return {
             roomId: room.id,
             token: existing.connectionToken,
@@ -198,7 +206,7 @@ export const roomRouter = createTRPCRouter({
       logIntent(room.id, player.id, "room.join", { code });
 
       await hub.publish(room.id);
-      const state = await buildRoomState(room.id, "CONTROLLER");
+      const state = await roomView(room.id, "CONTROLLER");
       return {
         roomId: room.id,
         token: player.connectionToken,
@@ -212,7 +220,7 @@ export const roomRouter = createTRPCRouter({
     .input(z.object({ roomId: z.string(), token: z.string() }))
     .query(async ({ ctx, input }) => {
       const player = await resolvePlayer(ctx.db, input.roomId, input.token);
-      return buildRoomState(input.roomId, player.role);
+      return roomView(input.roomId, player.role);
     }),
 
   /** Stage only: advance to the next card. */
@@ -281,6 +289,7 @@ export const roomRouter = createTRPCRouter({
 
       logIntent(input.roomId, player.id, "room.advance", { cardId, sequence });
 
+      hub.beginDeal(input.roomId);
       await hub.publish(input.roomId);
       return { sequence };
     }),
