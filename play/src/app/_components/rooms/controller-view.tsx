@@ -1,16 +1,25 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import type { RoomState, Seat } from "./types";
+import type { CardSocket, RoomState, Seat } from "./types";
+import { LiveCard, useDealIntro } from "./live-card";
 
 /**
- * The controller is a small surface: whose turn it is, and a hint of what
- * category is in play — never the card text. That decision is enforced
- * server-side; this component just renders what it receives.
+ * Phones show the same card as the stage, full text included, and mirror the
+ * host's gestures. They do not control the card unless this seat is the host.
  */
-export function ControllerView({ state, seat }: { state: RoomState; seat: Seat }) {
+export function ControllerView({
+  state,
+  seat,
+  socket,
+}: {
+  state: RoomState;
+  seat: Seat;
+  socket: CardSocket;
+}) {
   const router = useRouter();
-  const isHost = state.hostId === seat.playerId;
+  const intro = useDealIntro(state.status);
+  const isHost = state.hostId ? state.hostId === seat.playerId : false;
 
   if (state.status === "LOBBY") {
     return (
@@ -20,7 +29,7 @@ export function ControllerView({ state, seat }: { state: RoomState; seat: Seat }
         </span>
         <h1 className="font-lilita-one text-3xl text-tappen-blue-50">Waiting for the host…</h1>
         <p className="max-w-xs text-tappen-blue-300">
-          The first card will show up on the stage. Keep your phone in your pocket.
+          When the host draws, the card shows up here — the same one as the stage.
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           {state.players.map((p) => (
@@ -59,23 +68,39 @@ export function ControllerView({ state, seat }: { state: RoomState; seat: Seat }
     );
   }
 
-  // ACTIVE
+  // ACTIVE — full card, view-only unless this phone is the host seat.
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-10 bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 p-8 text-center text-tappen-blue-100">
-      <span className="rounded-full bg-tappen-blue-800 px-4 py-1.5 text-sm font-bold text-tappen-sunset-300">
-        {state.deckName}
-      </span>
-      <div>
-        <div className="font-lilita-one text-6xl text-tappen-sunset-400">
-          {state.turn?.sequence ?? "?"}
-        </div>
-        <div className="mt-2 text-sm uppercase tracking-widest text-tappen-blue-300">
-          {isHost ? "your card is on the stage" : "look at the stage"}
-        </div>
+    <div className="flex h-dvh flex-col overflow-hidden overscroll-none bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 text-center text-tappen-blue-100">
+      <div className="flex shrink-0 items-center justify-center gap-2 px-4 pb-1 pt-[max(1.25rem,env(safe-area-inset-top))]">
+        <span className="rounded-full bg-tappen-blue-800 px-4 py-1.5 text-sm font-bold text-tappen-sunset-300">
+          {state.deckName}
+          {state.turn ? ` · turn ${state.turn.sequence}` : ""}
+        </span>
+        <span className="flex items-center gap-1.5 rounded-full bg-tappen-blue-800 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-tappen-blue-200">
+          <span className="size-1.5 animate-pulse rounded-full bg-tappen-green-400" />
+          live
+        </span>
       </div>
-      <div className="animate-pulse text-tappen-blue-400">
-        someone is reading their card — say what comes to mind
-      </div>
+      {state.turn ? (
+        <LiveCard
+          content={state.turn.content}
+          skinId={state.turn.skinId}
+          sequence={state.turn.sequence}
+          interactive={isHost}
+          canAdvance={isHost && seat.role === "STAGE"}
+          intro={intro}
+          variant="hand"
+          socket={socket}
+          onAdvance={async () => undefined}
+        />
+      ) : (
+        <p className="flex flex-1 items-center justify-center px-8 text-tappen-blue-300">
+          Waiting for the first card.
+        </p>
+      )}
+      <p className="shrink-0 px-6 pb-[max(1rem,env(safe-area-inset-bottom))] text-sm text-tappen-blue-300">
+        {isHost ? "you are moving the card" : "following the host"}
+      </p>
     </div>
   );
 }

@@ -56,17 +56,22 @@ recap, and never without that player's consent.
 
 **No alcohol framing.** The game no longer uses drinking consequences.
 
-### Non-negotiable design constraint: stage + controllers
-This is **not** "sync the same card to every device."
+### Stage, controllers, and the shared live card
 
-- **Stage** — one device (propped-up phone, laptop, TV). Renders the current
-  card large and readable. This is the only place the card text is displayed at
-  full size.
-- **Controller** — every other player's phone. Small surface, few buttons.
-  Controllers send *intents*. They never render the card as the primary view.
+- **Stage** — one device (propped-up phone, laptop, TV). The host seat
+  (`Room.hostId`, role `STAGE`) drags, flips, and swipes the card here.
+- **Controller** — every other phone. Shows the **same card**, full text
+  included, and mirrors the host's gestures live. View-only: a controller
+  does not send card transforms unless that seat is the host. Controllers
+  still exist so later phases have a place for intents.
 
-If you find yourself building a full card reader on the controller, stop and
-re-read this section.
+The host's gestures are an ephemeral websocket transform (normalized
+position, rotation, flipped, dragging), throttled to about 30 Hz and not
+stored in the database. Swiping past the threshold calls the existing
+`room.advance` path; the new card then deals in on every screen.
+
+Hidden information stays hidden. `queuedById` and any other anonymous-queue
+field never appear in a tRPC response, a websocket payload, or a client log.
 
 ### Server authority
 The server is the single source of truth for room state. Controllers send
@@ -158,9 +163,10 @@ your choice and reasoning into `docs/realtime.md` in the `play` repo, including
 how it deploys and how it scales past one instance.
 
 Keep tRPC for everything request/response. The websocket layer carries room
-state broadcasts only. Do not attempt to route all game actions through
-websockets — intents can be tRPC mutations that trigger a broadcast. This is
-simpler and easier to debug.
+state broadcasts, plus one ephemeral host message: the live card transform.
+That pose is not game state and is not stored. Do not route turns, queues,
+or verdicts through the socket — those intents stay tRPC mutations that
+trigger a broadcast. Swipe-to-advance still calls `room.advance`.
 
 ### 1.3 Stage client (`play.tappen.app`)
 
@@ -169,9 +175,11 @@ simpler and easier to debug.
   picks the night's depth together (light / honest / deep); store it as
   `depthLevel`. Do not filter the draw on card depth until Phase 3.3 stamps
   `depth` on cards. Hot seat and crown are not shown yet.
-- Active: render current card large. Show the target player's name.
-- Advance to next card. This is the stage's privilege in Phase 1 — controllers
-  cannot advance the turn yet.
+- Active: render the current card large. The host can drag it, flip it, and
+  swipe it away. Show the target player's name.
+- Advance to next card by swiping past the threshold (a button may do the
+  same). This is the host's privilege in Phase 1 — other controllers cannot
+  advance the turn yet. Every device mirrors the fly-out and the deal-in.
 - End room → transition to `ENDED`.
 
 Design note: the stage will often be a propped-up phone at an awkward angle in
@@ -181,10 +189,10 @@ bad lighting. Very large type, very high contrast, minimal chrome.
 
 - Join by code. No account required.
 - Enter display name.
-- Show: whose turn it is, and a compact indicator of the current card's
-  category/deck — **not** the full card text.
-- Phase 1 has almost no controller buttons. That is correct and expected. The
-  controller exists so that Phase 2 has somewhere to live.
+- Show the same live card as the stage, including the full text, mirroring
+  the host's drag, flip, and swipe.
+- Phase 1 has no controller buttons for the card. That is correct. The
+  controller exists so that Phase 2 has somewhere to put intents.
 
 ### 1.5 Guest claim
 
@@ -485,7 +493,12 @@ looks alive at 3am on a Tuesday. If it doesn't, delay.
 - Remote/online play between people not in the same physical room.
 - Text or voice chat. The players are already talking to each other.
 - Any purchasable content.
-- Full card text rendered on controllers.
+
+**Shared live card.** Full card text on controllers is in scope. The stage and
+every phone show the same card and mirror what the host does with it (drag,
+flip, swipe-to-advance) over the room websocket. The pose is ephemeral and
+is not stored. `queuedById` and any anonymous-queue information stay off
+every client payload.
 
 ---
 
