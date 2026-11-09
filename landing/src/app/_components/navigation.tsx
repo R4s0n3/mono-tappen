@@ -8,14 +8,20 @@ import {
   PlayIcon,
 } from "@heroicons/react/24/solid";
 
-export default function Navigation() {
+export default function Navigation({
+  embedded = false,
+}: {
+  embedded?: boolean;
+}) {
   const scrollDirection = useScrollDirection();
   const pathname = usePathname();
   const onHomeEdition = pathname.startsWith("/home-edition");
   const fade = scrollDirection === "down" ? "opacity-0" : "opacity-100";
 
   return (
-    <div className="fixed z-50 flex w-full max-w-screen-2xl items-center justify-between p-4">
+    <div
+      className={`${embedded ? "relative bg-tappen-blue-500/95" : "fixed inset-x-0 top-0"} z-50 mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-3 p-4`}
+    >
       <Link
         href="https://play.tappen.app"
         aria-label="Play"
@@ -33,12 +39,11 @@ export default function Navigation() {
       <div className="flex items-center gap-3">
         <Link
           href="/home-edition"
-          className={`rounded-full bg-tappen-sunset-500 px-3 py-2 text-xs font-bold uppercase tracking-wide text-tappen-blue-900 shadow-md transition hover:bg-tappen-sunset-400 sm:px-4 sm:text-sm ${
+          className={`whitespace-nowrap rounded-full bg-tappen-sunset-500 px-2.5 py-2 text-[11px] font-bold uppercase tracking-wide text-tappen-blue-900 shadow-md transition hover:bg-tappen-sunset-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tappen-blue-50 sm:px-4 sm:text-sm ${
             onHomeEdition ? "ring-2 ring-tappen-sunset-200" : ""
           }`}
         >
-          <span className="sm:hidden">Preorder</span>
-          <span className="hidden sm:inline">Home edition</span>
+          Home Edition
         </Link>
         <Link
           aria-label="Tappen Hub"

@@ -1,33 +1,36 @@
 "use client";
+
 import Link from "next/link";
-import { ChevronDoubleDownIcon } from "@heroicons/react/24/solid";
-import { StarterCard } from "../starter-card";
-import { CardShowcase } from "../card-showcase";
-import { JoinRoom } from "../join-room";
+import { PlayIcon } from "@heroicons/react/24/solid";
 
-type HeaderProps = {
-  cards: string[];
-};
-
-export function Header(props: HeaderProps) {
+export function Header() {
   return (
-    <div className="relative h-full w-full border-b-2 border-tappen-blue-900">
-      <CardShowcase items={props.cards} rowConfig={[2, 3, 2]} />
-      <div className="m-auto flex h-full min-h-screen w-full max-w-screen-xl flex-col items-center justify-between gap-5 p-8">
-        <div className="w-8"></div>
-        <StarterCard />
-        <JoinRoom />
+    <div className="flex w-full flex-col items-center gap-5 text-center lg:flex-row lg:items-end lg:justify-between lg:text-left">
+      <div className="flex flex-col items-center gap-2 lg:items-start">
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-tappen-sunset-300">
+          A conversation party game
+        </p>
+        <h1 className="font-bang text-5xl uppercase leading-none sm:text-6xl lg:text-7xl">
+          Tappen
+        </h1>
+        <p className="text-lg leading-snug text-tappen-blue-100 sm:text-xl">
+          A game, not therapy.
+        </p>
+      </div>
+      <div className="flex w-full max-w-md gap-3 lg:w-auto lg:max-w-none">
+        <Link
+          href="https://play.tappen.app"
+          className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-tappen-blue-50 px-4 py-3 text-base font-bold text-tappen-blue-900 transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tappen-sunset-300 sm:px-6 sm:text-lg lg:flex-none lg:px-8"
+        >
+          <PlayIcon className="size-5 shrink-0" aria-hidden />
+          Play
+        </Link>
         <Link
           href="/home-edition"
-          className="text-sm font-semibold uppercase tracking-[0.18em] text-tappen-sunset-300 underline decoration-tappen-sunset-400/70 underline-offset-4"
+          className="inline-flex min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-full border-2 border-tappen-sunset-400 px-4 py-3 text-base font-bold text-tappen-sunset-200 transition hover:bg-tappen-sunset-500 hover:text-tappen-blue-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tappen-sunset-300 sm:px-6 sm:text-lg lg:flex-none lg:px-8"
         >
-          Preorder the printed box
+          Home Edition
         </Link>
-        <div className="flex animate-pulse flex-col items-center justify-center text-tappen-blue-200">
-          <Link href="#info">
-            <ChevronDoubleDownIcon className="w-9" />
-          </Link>
-        </div>
       </div>
     </div>
   );

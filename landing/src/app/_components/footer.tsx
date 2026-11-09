@@ -66,7 +66,7 @@ export default function Footer() {
               className="text-start underline underline-offset-4 transition duration-300 hover:text-tappen-blue-400"
               href="/home-edition"
             >
-              Home edition
+              Home Edition
             </Link>
             {["play", "info", "features"].map((link) =>
               link === "play" ? (
