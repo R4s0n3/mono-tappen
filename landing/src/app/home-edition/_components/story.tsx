@@ -40,9 +40,9 @@ export function HomeEditionStory({
             </p>
             <p className="max-w-xl text-lg leading-relaxed text-tappen-blue-200">
               The original English set, printed and boxed, including the newest
-              questions. A QR code in the box opens a multiplayer room on
-              play.tappen.app — one screen for the table, phones for everyone
-              else.
+              questions. Each box has its own single-use code. After you sign
+              in and confirm the account, it permanently unlocks Tappen Premium
+              and the Premium card skin for that one account.
             </p>
             <p className="text-4xl font-bold">
               {unitPrice}{" "}
@@ -98,9 +98,10 @@ export function HomeEditionStory({
               Boxed so it can live on a shelf and come out when people are
               actually in the room.
             </BoxTile>
-            <BoxTile title="A QR code" kicker="play.tappen.app">
-              Scan it to open a multiplayer room. One device is the stage. Every
-              other phone is a controller.
+            <BoxTile title="A single-use code" kicker="One account">
+              Scanning it does not use it up. You sign in, confirm the account,
+              and that account permanently keeps Tappen Premium and the Premium
+              card skin.
             </BoxTile>
           </div>
         </div>
@@ -142,9 +143,11 @@ export function HomeEditionStory({
               not replace the box.
             </p>
             <ol className="flex flex-col gap-6">
-              <Step n="1" title="Scan the code">
-                The insert opens play.tappen.app. The code on this page goes to
-                the same place, so you can try the room before the box arrives.
+              <Step n="1" title="Scan the code in the box">
+                The insert is a single-use code for one account. It permanently
+                unlocks Tappen Premium and the Premium card skin. The sample
+                code on this page is different: it opens the free room so you
+                can try play before the box arrives.
               </Step>
               <Step n="2" title="One stage">
                 Prop up a phone, a laptop, or a TV. That device shows the
@@ -271,8 +274,9 @@ export function HomeEditionStory({
             </Faq>
             <Faq q="Do I need the app?">
               You can read the printed cards with no account and no phone. The
-              QR code is there when you want a shared screen and a room on
-              play.tappen.app. That part is free.
+              code in the box permanently unlocks Tappen Premium and the Premium
+              card skin for one logged-in account. Playing a room on
+              play.tappen.app is still free.
             </Faq>
             <Faq q="Can I send it back?">
               Yes. You can withdraw within 14 days of receiving the box, without
@@ -287,8 +291,9 @@ export function HomeEditionStory({
               .
             </Faq>
             <Faq q="Is this a subscription?">
-              No. One payment, one box. Nothing on this page signs you up for
-              mail or a membership.
+              The box is a one-time payment, not a renewal. The code inside
+              permanently unlocks Tappen Premium and the Premium card skin for
+              one account. Nothing on this page signs you up for mail.
             </Faq>
           </div>
         </div>

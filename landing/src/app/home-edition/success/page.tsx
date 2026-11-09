@@ -79,6 +79,14 @@ export default async function HomeEditionSuccessPage({
           <p className="text-xl leading-relaxed text-tappen-blue-100">
             {statusCopy}
           </p>
+          {result.status === "PAID" ? (
+            <p className="text-lg leading-relaxed text-tappen-blue-200">
+              This payment does not unlock Tappen Premium. Each box contains its
+              own single-use code. After the box arrives, one person signs in
+              and confirms the account that should permanently keep Tappen
+              Premium and the Premium card skin.
+            </p>
+          ) : null}
           <dl className="grid w-full gap-3 rounded-3xl bg-tappen-blue-900/80 p-6 text-lg">
             <Row label="Reference">{result.id}</Row>
             <Row label="Quantity">{result.quantity}</Row>

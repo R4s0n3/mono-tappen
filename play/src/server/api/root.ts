@@ -1,3 +1,4 @@
+import { accountRouter } from "@/server/api/routers/account";
 import { cardRouter } from "@/server/api/routers/card";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { roomRouter } from "./routers/room";
@@ -9,6 +10,7 @@ import { skinRouter } from "./routers/skin";
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
+  account: accountRouter,
   card: cardRouter,
   room: roomRouter,
   skin: skinRouter,

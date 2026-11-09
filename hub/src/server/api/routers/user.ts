@@ -4,8 +4,12 @@ import {
   createTRPCRouter,
   protectedProcedure,
 } from "@/server/api/trpc";
+import { loadEntitlement } from "@/server/home/entitlement-db";
 
 export const userRouter = createTRPCRouter({
+  entitlement: protectedProcedure.query(({ ctx }) => {
+    return loadEntitlement(ctx.db, ctx.session.user.id);
+  }),
   getData: protectedProcedure
   .query(({ctx}) => {
     const {db, session} = ctx
