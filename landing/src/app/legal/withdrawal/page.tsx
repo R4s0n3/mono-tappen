@@ -29,9 +29,9 @@ export default function WithdrawalPage() {
           . Email for a withdrawal:{" "}
           <a
             className="underline underline-offset-4"
-            href="mailto:info@tappen.app"
+            href="mailto:legal@miomideal.com"
           >
-            info@tappen.app
+            legal@miomideal.com
           </a>
           .
         </p>
@@ -62,12 +62,13 @@ export default function WithdrawalPage() {
             indicated by you acquires, physical possession of the goods.
           </p>
           <p>
-            To exercise the right of withdrawal, you must inform us — [Legal
-            name of the seller], [Street and house number], [Postal code and
-            city], Germany, email info@tappen.app — of your decision to withdraw
-            from this contract by an unequivocal statement (for example a letter
-            sent by post or email). You may use the model withdrawal form below,
-            but it is not obligatory.
+            To exercise the right of withdrawal, you must inform us — Pascal
+            Schoenen, trading as „Mio Mideal“, Kaiser-Friedrich-Ring 17, 66740
+            Saarlouis, Germany, email legal@miomideal.com, phone +49 1567
+            9815927 — of your decision to withdraw from this contract by an
+            unequivocal statement (for example a letter sent by post or email).
+            You may use the model withdrawal form below, but it is not
+            obligatory.
           </p>
           <p>
             To meet the withdrawal deadline, it is sufficient for you to send
@@ -101,8 +102,8 @@ export default function WithdrawalPage() {
             delay and in any event not later than 14 days from the day on which
             you communicate your withdrawal from this contract to us. The
             deadline is met if you send back the goods before the period of 14
-            days has expired. Send them to [Legal name of the seller], [Street
-            and house number], [Postal code and city], Germany.
+            days has expired. Send them to Pascal Schoenen, trading as „Mio
+            Mideal“, Kaiser-Friedrich-Ring 17, 66740 Saarlouis, Germany.
           </p>
           <p>You will have to bear the direct cost of returning the goods.</p>
           <p>
@@ -119,7 +120,7 @@ export default function WithdrawalPage() {
             contract.
           </p>
           <pre className="overflow-x-auto whitespace-pre-wrap rounded-3xl bg-tappen-blue-900 p-6 font-sans text-base leading-relaxed text-tappen-blue-100">
-            {`To [Legal name of the seller], [Street and house number], [Postal code and city], Germany, info@tappen.app:
+            {`To Pascal Schoenen, trading as „Mio Mideal“, Kaiser-Friedrich-Ring 17, 66740 Saarlouis, Germany, legal@miomideal.com:
 
 I/We hereby give notice that I/We withdraw from my/our contract of sale of the following goods:
 

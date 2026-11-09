@@ -231,8 +231,8 @@ export function HomeEditionStory({
               </InfoRow>
             </dl>
             <p className="text-base leading-relaxed text-tappen-blue-200">
-              The seller is established in Germany. The legal name, address, and
-              VAT identification are on the{" "}
+              The seller is established in Germany. The legal name and address
+              are on the{" "}
               <Link
                 className="underline underline-offset-4"
                 href="/legal#imprint"
