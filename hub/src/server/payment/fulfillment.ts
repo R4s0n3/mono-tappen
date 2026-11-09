@@ -1,7 +1,8 @@
 import { TRPCError } from "@trpc/server";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import type Stripe from "stripe";
 
+import { keepSkinAfterRefund, keepSubscriptionAfterRefund } from "@/server/home/retention";
 import { db } from "@/server/db";
 import {
   checkoutAmountMatches,
@@ -101,6 +102,53 @@ type OtherGrants = {
   subscription: boolean;
 };
 
+type BoxRetention = {
+  premium: boolean;
+  skinIds: Set<string>;
+};
+
+function isMissingTable(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    (error.code === "P2021" || error.code === "P2022")
+  );
+}
+
+const noBoxRetention: BoxRetention = { premium: false, skinIds: new Set() };
+
+async function homeBoxTableReady(): Promise<boolean> {
+  try {
+    await db.$queryRaw`SELECT id FROM HomeBoxCode LIMIT 0`;
+    return true;
+  } catch (error) {
+    if (isMissingTable(error)) return false;
+    throw error;
+  }
+}
+
+async function readBoxRetention(tx: Tx, userId: string): Promise<BoxRetention> {
+  const redeemed = await tx.homeBoxCode.findFirst({
+    where: { redeemedByUserId: userId, status: "REDEEMED" },
+    select: { id: true },
+  });
+  if (!redeemed) return noBoxRetention;
+  const product = await tx.product.findFirst({
+    where: { name: "Premium", type: "SUBSCRIPTION" },
+    include: { skins: { select: { id: true } } },
+  });
+  return {
+    premium: true,
+    skinIds: new Set(
+      product
+        ? skinsGrantedByPurchase(
+            "SUBSCRIPTION",
+            product.skins.map((skin) => skin.id),
+          )
+        : [],
+    ),
+  };
+}
+
 async function grantsFromOtherPayments(userId: string, exceptPaymentId: string): Promise<OtherGrants> {
   const others = await db.payment.findMany({
     where: {
@@ -136,6 +184,7 @@ async function revokePurchase(
   paymentId: string,
   product: ResolvedProduct,
   otherGrants: OtherGrants,
+  box: BoxRetention,
 ): Promise<void> {
   if (product.type === "SUBSCRIPTION" && !otherGrants.subscription) {
     const anotherPremium = await tx.payment.findFirst({
@@ -147,7 +196,12 @@ async function revokePurchase(
       },
       select: { id: true },
     });
-    if (!anotherPremium) {
+    if (
+      !keepSubscriptionAfterRefund({
+        anotherCompletedPremiumPayment: Boolean(anotherPremium),
+        redeemedHomeBox: box.premium,
+      })
+    ) {
       await tx.subscription.updateMany({
         where: { userId, status: "active" },
         data: { status: "canceled", endsAt: new Date() },
@@ -159,7 +213,14 @@ async function revokePurchase(
     product.type,
     product.skins.map((skin) => skin.id),
   )) {
-    if (otherGrants.skinIds.has(skinId)) continue;
+    if (
+      keepSkinAfterRefund({
+        grantedByAnotherPayment: otherGrants.skinIds.has(skinId),
+        grantedByHomeBox: box.skinIds.has(skinId),
+      })
+    ) {
+      continue;
+    }
     await tx.userSkin.deleteMany({ where: { userId, skinId } });
   }
 }
@@ -338,6 +399,7 @@ async function markPaymentRefunded(paymentId: string): Promise<void> {
   const otherGrants = product
     ? await grantsFromOtherPayments(payment.userId, payment.id)
     : { skinIds: new Set<string>(), subscription: false };
+  const boxTableReady = await homeBoxTableReady();
 
   await db.$transaction(async (tx) => {
     await lockPayment(tx, payment.id);
@@ -346,8 +408,10 @@ async function markPaymentRefunded(paymentId: string): Promise<void> {
 
     // Revoke even when the row never reached COMPLETED. The old confirm path
     // could insert UserSkin and then throw before updating status.
+    // A redeemed Home box is a separate permanent grant and must survive this refund.
     if (product) {
-      await revokePurchase(tx, current.userId, current.id, product, otherGrants);
+      const box = boxTableReady ? await readBoxRetention(tx, current.userId) : noBoxRetention;
+      await revokePurchase(tx, current.userId, current.id, product, otherGrants, box);
     } else if (current.status === "COMPLETED") {
       throw new Error(`Cannot revoke payment ${payment.id} because its product is unknown`);
     }

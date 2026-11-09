@@ -218,8 +218,9 @@ model User {
   updatedAt     DateTime      @updatedAt
   deletedAt     DateTime?
   last_newName  DateTime?
-  subscription  Subscription?
-  players       Player[]
+  subscription     Subscription?
+  players          Player[]
+  redeemedBoxCodes HomeBoxCode[]
 }
 
 model Subscription {
@@ -332,7 +333,43 @@ model HomeOrder {
   status                HomeOrderStatus @default(PENDING)
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
+  boxCodes              HomeBoxCode[]
 
   @@index([status])
   @@index([email])
+}
+
+/// Single-use code printed in one Tappen Home box.
+/// The secret is never stored. `codeHash` is HMAC-SHA256 with BOX_CODE_PEPPER.
+/// Additive only. Migration: play/prisma/migrations/20261109120000_add_home_box_code.
+enum HomeBoxCodeStatus {
+  ISSUED
+  REDEEMED
+  VOID
+}
+
+model HomeBoxCode {
+  id               String            @id @default(cuid())
+  codeHash         String            @unique
+  status           HomeBoxCodeStatus @default(ISSUED)
+  homeOrderId      String?
+  homeOrder        HomeOrder?        @relation(fields: [homeOrderId], references: [id], onDelete: Restrict)
+  redeemedByUserId String?
+  redeemedBy       User?             @relation(fields: [redeemedByUserId], references: [id], onDelete: Restrict)
+  redeemedAt       DateTime?
+  voidedAt         DateTime?
+  createdAt        DateTime          @default(now())
+
+  @@index([homeOrderId])
+  @@index([redeemedByUserId])
+  @@index([status])
+}
+
+/// Failed guess counter. Stores an HMAC of the client IP, never a redemption code.
+model HomeBoxAttempt {
+  id        String   @id @default(cuid())
+  ipHash    String
+  createdAt DateTime @default(now())
+
+  @@index([ipHash, createdAt])
 }

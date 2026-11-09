@@ -110,7 +110,7 @@ export async function createHomeCheckout(
             tax_behavior: "inclusive",
             product_data: {
               name: HOME_PRODUCT_NAME,
-              description: `Boxed set of 100 original English Tappen cards, plus a QR code to play.tappen.app. Preorder, ships by ${HOME_SHIP_BY_LABEL}.`,
+              description: `Boxed set of 100 original English Tappen cards. Includes a single-use code that permanently unlocks Tappen Premium and the Premium card skin for one account. Preorder, ships by ${HOME_SHIP_BY_LABEL}.`,
               metadata: { product: HOME_PRODUCT_META },
             },
           },

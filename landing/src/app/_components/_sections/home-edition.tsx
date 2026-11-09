@@ -25,8 +25,9 @@ export function HomeEdition() {
             Tappen Home
           </h2>
           <p className="text-2xl leading-snug lg:text-3xl">
-            The original hundred, printed and boxed, with a QR code that opens a
-            room on play.tappen.app.
+            The original hundred, printed and boxed. Each box includes a
+            single-use code that permanently unlocks Tappen Premium and the
+            Premium card skin for one account.
           </p>
           <p className="text-lg leading-relaxed text-tappen-blue-200">
             One-time payment of {formatEur(HOME_UNIT_AMOUNT_CENTS)} incl. VAT,

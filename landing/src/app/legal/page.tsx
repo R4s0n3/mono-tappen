@@ -139,6 +139,13 @@ export default async function Legal() {
               2026, by 24 December 2026.
             </Paragraph>
             <Paragraph>
+              Each box includes a single-use code that permanently unlocks
+              Tappen Premium and the Premium card skin for one account. The code
+              is claimed in the app after you sign in and confirm the account.
+              Paying for the box does not unlock it by itself, and the code is
+              not a room pass.
+            </Paragraph>
+            <Paragraph>
               You can withdraw from that contract within 14 days of receiving
               the goods. The withdrawal notice and model form are on the{" "}
               <Link
@@ -168,7 +175,9 @@ export default async function Legal() {
               When you preorder Tappen Home we store the email, name, shipping
               address, quantity, amount, and order status needed to take payment
               and ship the box. Stripe processes the card payment. We do not use
-              the product page to sign you up for a newsletter.
+              the product page to sign you up for a newsletter. When a code from
+              the box is claimed we store a hash of that code and the account
+              that claimed it. We do not store the code itself.
             </Paragraph>
           </Section>
           <Section id="submission-terms" title="Submission Terms">

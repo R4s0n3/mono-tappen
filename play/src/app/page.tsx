@@ -1,3 +1,5 @@
+import { getServerAuthSession } from "@/server/auth";
+import { entitlementCopy } from "@/server/home/entitlement";
 import { api } from "@/trpc/server";
 
 // import { AdjustmentsHorizontalIcon } from "@heroicons/react/24/solid";
@@ -8,6 +10,8 @@ import GameCards from "./_components/game-cards";
 
 
 export default async function Home({ searchParams }: { searchParams: { mode: string, uid: string, did: string, tid: string, game: string } }) {
+  const session = await getServerAuthSession();
+  const entitlement = session?.user ? await api.account.entitlement() : null;
   const { mode, uid, did, tid, game } = searchParams;
   const tagIds: string[] = tid?.split('-') ?? [];
   const cardIds: string[] = game?.split('-') ?? [];
@@ -35,6 +39,15 @@ export default async function Home({ searchParams }: { searchParams: { mode: str
             Join with a code
           </Link>
         </div>
+        {entitlement ? (
+          <div className="flex flex-col items-center gap-1 text-center text-sm">
+            <p>{entitlement.premium ? entitlementCopy.premiumOn : entitlementCopy.premiumOff}</p>
+            <p>
+              {entitlement.ownsPremiumSkin ? entitlementCopy.skinOn : entitlementCopy.skinOff}{" "}
+              {entitlement.ownsPremiumSkin ? entitlementCopy.equip : ""}
+            </p>
+          </div>
+        ) : null}
         <span className="text-xs uppercase">join</span>
         <Link href="https://hub.tappen.app" className="text-sm font-bold z-50">Tappen Hub</Link>
       </footer>
