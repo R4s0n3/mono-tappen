@@ -14,6 +14,7 @@ const config = {
   ],
   "ignorePatterns":[
     "templates/",
+    "**/*.test.ts",
   ],
   "rules": {
     "@typescript-eslint/array-type": "off",
