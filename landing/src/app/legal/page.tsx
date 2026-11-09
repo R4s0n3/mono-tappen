@@ -285,39 +285,38 @@ export default async function Legal() {
               Legal notice (Impressum) for Tappen and for sales of physical
               goods to customers in Germany and the European Union.
             </Paragraph>
-            <Headline level={2}>Seller</Headline>
+            <Headline level={2}>Information pursuant to § 5 DDG</Headline>
             <Paragraph>
-              [Legal name of the seller]
+              Pascal Schoenen, trading as „Mio Mideal“
               <br />
-              [Legal form, if any]
+              Kaiser-Friedrich-Ring 17
               <br />
-              [Street and house number]
-              <br />
-              [Postal code and city]
+              66740 Saarlouis
               <br />
               Germany
             </Paragraph>
             <Headline level={2}>Contact</Headline>
             <Paragraph>
+              Phone: +49 1567 9815927
+              <br />
               Email:{" "}
               <Link
-                href="mailto:info@tappen.app"
+                href="mailto:legal@miomideal.com"
                 className="text-tappen-blue-400 hover:underline"
               >
-                info@tappen.app
+                legal@miomideal.com
               </Link>
-              <br />
-              Phone: [phone number]
-            </Paragraph>
-            <Headline level={2}>Register and tax</Headline>
-            <Paragraph>
-              Commercial register: [court and registration number, if
-              applicable]
-              <br />
-              VAT identification number: [VAT ID, if applicable]
             </Paragraph>
             <Headline level={2}>Responsible for content</Headline>
-            <Paragraph>[Name of the person responsible for content]</Paragraph>
+            <Paragraph>
+              Responsible pursuant to § 18 Abs. 2 MStV: Pascal Schoenen,
+              Kaiser-Friedrich-Ring 17, 66740 Saarlouis, Germany.
+            </Paragraph>
+            <Headline level={2}>Consumer dispute resolution</Headline>
+            <Paragraph>
+              We are neither willing nor obliged to participate in dispute
+              resolution proceedings before a consumer arbitration board.
+            </Paragraph>
             <Paragraph>
               Physical goods are sold on the{" "}
               <Link
@@ -334,10 +333,10 @@ export default async function Legal() {
             <Paragraph>
               For any questions, contact us at{" "}
               <Link
-                href="mailto:info@tappen.app"
+                href="mailto:legal@miomideal.com"
                 className="text-tappen-blue-400 hover:underline"
               >
-                info@tappen.app
+                legal@miomideal.com
               </Link>
               .
             </Paragraph>
