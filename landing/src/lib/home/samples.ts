@@ -4,13 +4,13 @@ export type SamplePrompt = {
 };
 
 /**
- * First prompts returned by the original app
- * (`GET https://api.tappen.app/api/cards/published-cards`).
- * Strings are copied as stored, including the original spelling.
+ * The first prompt is the one on the reference card. The rest are still
+ * returned by GET https://api.tappen.app/api/cards/published-cards,
+ * copied as stored, including the original spelling.
  */
 export const HOME_SAMPLES: readonly SamplePrompt[] = [
   {
-    text: "When was the last time you did something for the first time?",
+    text: "What’s a skill you’d love to master overnight?",
     author: "Tappen",
   },
   {

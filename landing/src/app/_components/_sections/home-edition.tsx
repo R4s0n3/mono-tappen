@@ -40,8 +40,10 @@ export function HomeEdition() {
           </Link>
         </div>
         {featured ? (
-          <div className="rotate-2">
-            <SampleCard card={featured} />
+          <div className="flex w-full justify-center">
+            <div className="w-full max-w-xs rotate-2">
+              <SampleCard card={featured} />
+            </div>
           </div>
         ) : null}
       </div>
