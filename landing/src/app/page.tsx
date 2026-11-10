@@ -24,10 +24,24 @@ export default async function Home() {
       </div>
       <section className="relative w-full">
         {cards.length > 0 ? (
-          <CardShowcase items={cards} rowConfig={[2, 3, 2]} />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 overflow-hidden"
+          >
+            <div className="h-full w-full origin-top scale-110 opacity-35 blur-[2px] max-sm:-translate-y-10 sm:scale-100 sm:opacity-60 sm:blur-none">
+              <CardShowcase items={cards} rowConfig={[2, 3, 2]} />
+            </div>
+            <div className="absolute inset-x-0 top-0 h-[28rem] bg-gradient-to-b from-tappen-blue-500 from-25% via-tappen-blue-500/80 to-transparent sm:h-[22rem]" />
+          </div>
         ) : null}
         <div className="relative z-10 mx-auto flex w-full max-w-screen-xl flex-col gap-5 px-4 pb-6 pt-28 sm:px-6 lg:gap-6 lg:px-8 lg:pb-10 lg:pt-28">
-          <Header />
+          <div className="relative">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -inset-x-3 -inset-y-4 -z-10 rounded-[1.75rem] bg-tappen-blue-500 shadow-[0_0_36px_18px_rgb(29_31_47)] sm:-inset-x-6"
+            />
+            <Header />
+          </div>
           <HomeEdition
             deCents={env.HOME_SHIPPING_DE_CENTS}
             euCents={env.HOME_SHIPPING_EU_CENTS}

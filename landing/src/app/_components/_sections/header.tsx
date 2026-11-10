@@ -27,7 +27,7 @@ export function Header() {
         </Link>
         <Link
           href="/home-edition"
-          className="inline-flex min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-full border-2 border-tappen-sunset-400 px-4 py-3 text-base font-bold text-tappen-sunset-200 transition hover:bg-tappen-sunset-500 hover:text-tappen-blue-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tappen-sunset-300 sm:px-6 sm:text-lg lg:flex-none lg:px-8"
+          className="inline-flex min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-full bg-tappen-sunset-500 px-4 py-3 text-base font-bold text-tappen-blue-900 transition hover:bg-tappen-sunset-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tappen-blue-50 sm:px-6 sm:text-lg lg:flex-none lg:px-8"
         >
           Home Edition
         </Link>
