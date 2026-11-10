@@ -28,8 +28,8 @@ export function HomeEditionStory({
     <>
       <section className="flex min-h-dvh w-full items-center px-6 pb-20 pt-28">
         <div className="mx-auto grid w-full max-w-screen-xl items-center gap-16 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="flex flex-col items-center gap-6 text-center">
-            <p className="flex w-fit max-w-full flex-col items-center gap-1.5">
+          <div className="flex flex-col items-start gap-6 text-left">
+            <p className="flex w-fit max-w-full flex-col items-center gap-1.5 self-center">
               <span className="whitespace-nowrap rounded-full border border-tappen-sunset-400/50 px-3 py-1 text-[11px] font-bold uppercase leading-none tracking-[0.12em] text-tappen-sunset-300 sm:px-4 sm:text-xs sm:tracking-[0.22em]">
                 Preorder · ships before Christmas
               </span>
@@ -55,7 +55,7 @@ export function HomeEditionStory({
                 incl. VAT, plus shipping
               </span>
             </p>
-            <div className="flex w-full max-w-md flex-col items-stretch gap-3 sm:max-w-none sm:flex-row sm:justify-center">
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <a
                 href="#preorder"
                 className="rounded-full bg-tappen-sunset-500 px-8 py-4 text-center text-lg font-bold text-tappen-blue-900 transition hover:bg-tappen-sunset-400"
@@ -70,7 +70,7 @@ export function HomeEditionStory({
               </a>
             </div>
           </div>
-          <div className="flex w-full justify-center">
+          <div className="flex w-full justify-center lg:justify-end">
             {heroCard ? (
               <div className="w-full max-w-xs rotate-2">
                 <SampleCard card={heroCard} />
