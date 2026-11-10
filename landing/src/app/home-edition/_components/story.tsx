@@ -29,8 +29,13 @@ export function HomeEditionStory({
       <section className="flex min-h-dvh w-full items-center px-6 pb-20 pt-28">
         <div className="mx-auto grid w-full max-w-screen-xl items-center gap-16 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="flex flex-col items-start gap-6 text-left">
-            <p className="rounded-full border border-tappen-sunset-400/50 px-4 py-1 text-xs font-bold uppercase tracking-[0.22em] text-tappen-sunset-300">
-              Preorder · ships before Christmas 2026
+            <p className="flex w-fit max-w-full flex-col items-center gap-1.5 self-center">
+              <span className="whitespace-nowrap rounded-full border border-tappen-sunset-400/50 px-3 py-1 text-[11px] font-bold uppercase leading-none tracking-[0.12em] text-tappen-sunset-300 sm:px-4 sm:text-xs sm:tracking-[0.22em]">
+                Preorder · ships before Christmas
+              </span>
+              <span className="text-xs font-bold uppercase tracking-[0.22em] text-tappen-sunset-300">
+                2026
+              </span>
             </p>
             <h1 className="font-bang text-6xl uppercase leading-none sm:text-7xl lg:text-8xl">
               Tappen Home
@@ -40,9 +45,9 @@ export function HomeEditionStory({
             </p>
             <p className="max-w-xl text-lg leading-relaxed text-tappen-blue-200">
               The original English set, printed and boxed, including the newest
-              questions. Each box has its own single-use code. After you sign
-              in and confirm the account, it permanently unlocks Tappen Premium
-              and the Premium card skin for that one account.
+              questions. Each box has its own single-use code. After you sign in
+              and confirm the account, it permanently unlocks Tappen Premium and
+              the Premium card skin for that one account.
             </p>
             <p className="text-4xl font-bold">
               {unitPrice}{" "}
