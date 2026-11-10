@@ -122,7 +122,11 @@ export async function getRoomCardPool(roomId) {
 
   const cards = await prisma.card.findMany({
     where: {
-      author: { name: DECK_PLAYER, email: DECK_EMAIL, emailVerified: { not: null } },
+      author: {
+        name: { equals: DECK_PLAYER, mode: "insensitive" },
+        email: { equals: DECK_EMAIL, mode: "insensitive" },
+        emailVerified: { not: null },
+      },
       ...playableCardWhere,
       health: { gte: 700000 },
     },

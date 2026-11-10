@@ -125,8 +125,8 @@ export const cardRouter = createTRPCRouter({
     const cards = await db.card.findMany({
       where: {
         author: {
-          name: "Tappen",
-          email: "admio@tappen.app",
+          name: { equals: "Tappen", mode: "insensitive" },
+          email: { equals: "admio@tappen.app", mode: "insensitive" },
           emailVerified: { not: null }
         },
         nsfw: false,
@@ -203,7 +203,7 @@ if(input.tid && input.tid?.length > 0){
     where:{
       tags: {
         some: {  
-          name: { in: input.tid }
+          name: { in: input.tid, mode: "insensitive" }
         }
       }
     },

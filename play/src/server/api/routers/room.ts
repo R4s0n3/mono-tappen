@@ -14,7 +14,8 @@ import type { db as DbClient } from "@/server/db";
 
 /**
  * Join codes: 6 chars from an alphabet with no visually confusable
- * characters (0/O, 1/I/L removed).
+ * characters (0/O, 1/I/L removed). Stored and queried in uppercase so the
+ * case-sensitive Postgres unique index matches a code a player types.
  */
 const CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
 const CODE_LENGTH = 6;

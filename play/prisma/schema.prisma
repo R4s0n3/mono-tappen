@@ -1,11 +1,12 @@
 // Ѫ
+// Shared by hub, landing, and play. PostgreSQL. Apply migrations from play/ only.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -63,6 +64,7 @@ model UserSkin {
   acquiredAt DateTime @default(now())
 
   @@id([userId, skinId]) // Composite primary key
+  @@index([skinId])
 }
 
 model Card {
@@ -89,8 +91,8 @@ model Card {
   likedBy User[] @relation("CardLikesToUser")
   turns   Turn[]
 
-  @@index([authorId], map: "Card_authorId_fkey")
-  @@index([skinId], map: "Card_skinId_fkey")
+  @@index([authorId])
+  @@index([skinId])
 }
 
 model Tag {
@@ -116,7 +118,7 @@ model Account {
   user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  @@index([userId], map: "Account_userId_fkey")
+  @@index([userId])
 }
 
 model Session {
@@ -126,7 +128,7 @@ model Session {
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId], map: "Session_userId_fkey")
+  @@index([userId])
 }
 
 model Deck {
@@ -142,7 +144,7 @@ model Deck {
   likedBy   User[]    @relation("DeckLikesToUser")
   rooms     Room[]
 
-  @@index([creatorId], map: "Deck_creatorId_fkey")
+  @@index([creatorId])
 }
 
 model Room {
@@ -158,8 +160,8 @@ model Room {
   host      Player?    @relation("RoomHost", fields: [hostId], references: [id])
   deck      Deck?      @relation(fields: [deckId], references: [id])
 
-  @@index([deckId], map: "Room_deckId_fkey")
-  @@index([hostId], map: "Room_hostId_fkey")
+  @@index([deckId])
+  @@index([hostId])
 }
 
 model Player {
@@ -178,8 +180,8 @@ model Player {
   user            User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
   turns           Turn[]     @relation("TurnTarget")
 
-  @@index([roomId], map: "Player_roomId_fkey")
-  @@index([userId], map: "Player_userId_fkey")
+  @@index([roomId])
+  @@index([userId])
 }
 
 model Turn {
@@ -195,29 +197,29 @@ model Turn {
   target     Player?   @relation("TurnTarget", fields: [targetId], references: [id])
 
   @@index([roomId, sequence], map: "Turn_roomId_sequence_idx")
-  @@index([cardId], map: "Turn_cardId_fkey")
-  @@index([targetId], map: "Turn_targetId_fkey")
+  @@index([cardId])
+  @@index([targetId])
 }
 
 model User {
-  id            String        @id @default(cuid())
-  name          String?
-  email         String?       @unique
-  emailVerified DateTime?
-  image         String?
-  paymentId     String?
-  accounts      Account[]
-  cards         Card[]
-  decks         Deck[]
-  sessions      Session[]
-  owned_skins   UserSkin[]
-  payments      Payment[]
-  liked_cards   Card[]        @relation("CardLikesToUser")
-  liked_decks   Deck[]        @relation("DeckLikesToUser")
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  deletedAt     DateTime?
-  last_newName  DateTime?
+  id               String        @id @default(cuid())
+  name             String?
+  email            String?       @unique
+  emailVerified    DateTime?
+  image            String?
+  paymentId        String?
+  accounts         Account[]
+  cards            Card[]
+  decks            Deck[]
+  sessions         Session[]
+  owned_skins      UserSkin[]
+  payments         Payment[]
+  liked_cards      Card[]        @relation("CardLikesToUser")
+  liked_decks      Deck[]        @relation("DeckLikesToUser")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  deletedAt        DateTime?
+  last_newName     DateTime?
   subscription     Subscription?
   players          Player[]
   redeemedBoxCodes HomeBoxCode[]
@@ -254,6 +256,9 @@ model Payment {
   purchasedAt DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   status      PaymentStatus @default(PENDING)
+
+  @@index([userId])
+  @@index([productId])
 }
 
 model VerificationToken {
@@ -304,9 +309,7 @@ enum PlayerRole {
 }
 
 /// Physical preorder of the boxed Tappen Home card set.
-/// Additive only. Migration: play/prisma/migrations/20261102153000_add_home_order.
-/// Sorts after 20261102120000_payment_status_expired_cancelled. Do not fold
-/// this model into 20250226000000_baseline.
+/// Included in the PostgreSQL baseline play/prisma/migrations/0_init_postgres.
 enum HomeOrderStatus {
   PENDING
   PAID
@@ -341,7 +344,7 @@ model HomeOrder {
 
 /// Single-use code printed in one Tappen Home box.
 /// The secret is never stored. `codeHash` is HMAC-SHA256 with BOX_CODE_PEPPER.
-/// Additive only. Migration: play/prisma/migrations/20261109120000_add_home_box_code.
+/// Included in the PostgreSQL baseline play/prisma/migrations/0_init_postgres.
 enum HomeBoxCodeStatus {
   ISSUED
   REDEEMED

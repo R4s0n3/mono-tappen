@@ -1,7 +1,7 @@
 /**
  * Simulates a host and two viewers on a local WebSocket server.
  *
- * The server is not the full Next process (that needs MySQL). It is a
+ * The server is not the full Next process (that needs PostgreSQL). It is a
  * one-room stand-in whose pose decisions are the production fan-out:
  * `src/shared/card-transform.js`, the same module `RoomHub` calls.
  *

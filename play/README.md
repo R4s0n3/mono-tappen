@@ -4,4 +4,4 @@
 
 Prisma schema for hub, landing, and play is identical. Migration history is in this app only.
 
-Production rollout (backup, mark `20250226000000_baseline` applied, then `migrate deploy`) is in [docs/migrations.md](docs/migrations.md). Do not run `prisma db push` against production.
+The database is PostgreSQL. Production cutover from MySQL (empty `prisma migrate deploy`, then `scripts/migrate-mysql-to-postgres.ts`) is in [docs/migrations.md](docs/migrations.md). Do not run `prisma db push` against production.

@@ -36,7 +36,7 @@ function purchaseTypeFromSession(session: Stripe.Checkout.Session): PurchaseType
 }
 
 async function lockPayment(tx: Tx, paymentId: string): Promise<void> {
-  await tx.$queryRaw<Array<{ id: string }>>`SELECT id FROM Payment WHERE id = ${paymentId} FOR UPDATE`;
+  await tx.$queryRaw<Array<{ id: string }>>`SELECT "id" FROM "Payment" WHERE "id" = ${paymentId} FOR UPDATE`;
 }
 
 async function loadProduct(productId: string): Promise<ResolvedProduct | null> {
@@ -118,7 +118,7 @@ const noBoxRetention: BoxRetention = { premium: false, skinIds: new Set() };
 
 async function homeBoxTableReady(): Promise<boolean> {
   try {
-    await db.$queryRaw`SELECT id FROM HomeBoxCode LIMIT 0`;
+    await db.$queryRaw`SELECT "id" FROM "HomeBoxCode" LIMIT 0`;
     return true;
   } catch (error) {
     if (isMissingTable(error)) return false;
@@ -133,7 +133,7 @@ async function readBoxRetention(tx: Tx, userId: string): Promise<BoxRetention> {
   });
   if (!redeemed) return noBoxRetention;
   const product = await tx.product.findFirst({
-    where: { name: "Premium", type: "SUBSCRIPTION" },
+    where: { name: { equals: "Premium", mode: "insensitive" }, type: "SUBSCRIPTION" },
     include: { skins: { select: { id: true } } },
   });
   return {
