@@ -1,6 +1,5 @@
 'use client'
 import { memo, useEffect, useState, useCallback } from "react"
-import WaterMark from "./watermark"
 import { api } from "@/trpc/react"
 import CardSkin, { type CardSkinItem } from "./_elements/card-skin"
 import { StarIcon, FireIcon, XMarkIcon } from "@heroicons/react/24/solid"
@@ -8,6 +7,7 @@ import { StarIcon as StarIconOutline } from "@heroicons/react/24/outline"
 import { ArrowUpOnSquareIcon as ShareIcon, FlagIcon } from "@heroicons/react/24/outline"
 import Modal from "../modal"
 import { reasons } from "@/util/reasons"
+import { CardFace, CardFooterFrame, cardFooterLabelClass } from "./card-face"
 
 type TappenCardProps = {
   card?: string,
@@ -28,21 +28,6 @@ const defaultCardData: CardData = {
   nsfw: false,
   isLiked: false
 }
-
-// Memoize the CardContent component
-const CardContent = memo(({ content }: { content: string }) => {
-  // Compute text size once based on content length
-  const contentSize = content.length > 42
-    ? "text-3xl md:text-sm lg:text-xl xl:text-3xl"
-    : "text-4xl md:text-base lg:text-2xl xl:text-4xl"
-
-  return (
-    <p className={`${contentSize} pointer-events-none select-none overflow-hidden py-1.5`}>
-      {content}
-    </p>
-  )
-})
-CardContent.displayName = 'CardContent'
 
 type FooterIcon = {
   svg: React.ComponentType<{ className?: string }>;
@@ -206,29 +191,23 @@ const CardFooter = memo(function CardFooter(props: CardFooterProps) {
           </div>
         </span>
       </Modal>
-      <footer className="w-full flex justify-between items-center mt-auto">
-        <div className="font-sans font-normal select-none">
-          {authorTag && <p className="first-letter:uppercase font-bold select-none">@{authorTag}</p>}
-        </div>
-        <div>
-          <div className="flex gap-2 min-w-[max-content]">
-            {icons.map((icon, idx) =>
-              icon.display && (
-                <button
-                  disabled={isReporting || isLiking}
-                  id={`${icon.name}`}
-                  type="button"
-                  onClick={handleButtonClicked}
-                  key={idx}
-                  className="p-1 min-w-[2rem] flex justify-center items-center disabled:opacity-10"
-                >
-                  <icon.svg className="size-6 text-tappen-blue-500" />
-                </button>
-              )
-            )}
-          </div>
-        </div>
-      </footer>
+      <CardFooterFrame
+        label={authorTag ? <p className={cardFooterLabelClass}>@{authorTag}</p> : null}
+        actions={icons.map((icon, idx) =>
+          icon.display && (
+            <button
+              disabled={isReporting || isLiking}
+              id={`${icon.name}`}
+              type="button"
+              onClick={handleButtonClicked}
+              key={idx}
+              className="p-1 min-w-[2rem] flex justify-center items-center disabled:opacity-10"
+            >
+              <icon.svg className="size-6 text-tappen-blue-500" />
+            </button>
+          )
+        )}
+      />
     </>
   )
 })
@@ -249,16 +228,18 @@ const TappenCard = memo(function TappenCard(props: TappenCardProps) {
     <div className="w-full cursor-pointer max-w-xs aspect-[5/6.9]">
       <CardSkin {...(typeof skin === 'string' ? { skinId: skin } : { skinObject: skin })}>
         {!children && cardData && (
-          <div id={props.card} className="p-4 h-full flex flex-col justify-between">
-            <WaterMark />
-            <CardContent content={cardData.content} />
-            <CardFooter
-              nsfw={cardData.nsfw}
-              authorTag={cardData.author}
-              liked={cardData.isLiked}
-              card={props.card ?? ""}
-            />
-          </div>
+          <CardFace
+            id={props.card}
+            content={cardData.content}
+            footer={
+              <CardFooter
+                nsfw={cardData.nsfw}
+                authorTag={cardData.author}
+                liked={cardData.isLiked}
+                card={props.card ?? ""}
+              />
+            }
+          />
         )}
         {children}
       </CardSkin>
