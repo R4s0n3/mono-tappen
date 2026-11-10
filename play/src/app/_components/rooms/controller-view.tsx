@@ -89,7 +89,6 @@ export function ControllerView({
           interactive={isHost}
           canAdvance={isHost && seat.role === "STAGE"}
           intro={intro}
-          variant="hand"
           socket={socket}
           onAdvance={async () => undefined}
         />

@@ -193,7 +193,6 @@ export function StageView({
           interactive={isHost}
           canAdvance={isHost}
           intro={intro}
-          variant="stage"
           socket={socket}
           onAdvance={requestAdvance}
         />

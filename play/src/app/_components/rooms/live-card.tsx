@@ -9,6 +9,7 @@ import {
   type CardTransform,
 } from "@/shared/card-transform";
 import CardSkin from "../tappen-card/_elements/card-skin";
+import { CardFace, CardFooterFrame, cardFooterLabelClass } from "../tappen-card/card-face";
 import type { CardSocket, RoomStatus } from "./types";
 
 const SEND_INTERVAL_MS = 32;
@@ -26,7 +27,6 @@ type LiveCardProps = {
   interactive: boolean;
   canAdvance: boolean;
   intro: boolean;
-  variant: "stage" | "hand";
   socket: CardSocket;
   onAdvance: () => Promise<void>;
 };
@@ -68,7 +68,7 @@ export function useDealIntro(status: RoomStatus) {
 }
 
 export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveCard(
-  { content, skinId, sequence, interactive, canAdvance, intro, variant, socket, onAdvance },
+  { content, skinId, sequence, interactive, canAdvance, intro, socket, onAdvance },
   ref,
 ) {
   const areaRef = useRef<HTMLDivElement>(null);
@@ -83,8 +83,6 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
   sequenceRef.current = sequence;
   const interactiveRef = useRef(interactive);
   interactiveRef.current = interactive;
-  const variantRef = useRef(variant);
-  variantRef.current = variant;
   const canAdvanceRef = useRef(canAdvance);
   canAdvanceRef.current = canAdvance;
 
@@ -123,9 +121,11 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
       const card = cardRef.current;
       if (!area || !card) return;
       const rect = area.getBoundingClientRect();
-      const cap = variantRef.current === "stage" ? 512 : 352;
-      const maxW = Math.min(rect.width * 0.8, cap);
-      const maxH = rect.height * 0.74;
+      // Solo play renders the card at max-w-xs (20rem). Use that width for
+      // both seats, and only shrink when the stage cannot hold it.
+      const soloWidth = 320;
+      const maxW = Math.min(Math.max(0, rect.width - 40), soloWidth);
+      const maxH = Math.max(0, rect.height - 16);
       const width = Math.max(140, Math.min(maxW, maxH * (5 / 6.9)));
       card.style.width = `${width}px`;
       card.style.transform = `translate3d(${pose.x * rect.width}px, ${pose.y * rect.height}px, 0) translate3d(-50%, -50%, 0) rotate(${pose.rotation}deg) rotateY(${pose.rotY}deg)`;
@@ -391,9 +391,6 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
     void springBack();
   };
 
-  const textSize =
-    content.length > 160 ? "text-lg md:text-2xl" : content.length > 80 ? "text-2xl md:text-3xl" : "text-3xl md:text-4xl";
-
   return (
     <div
       ref={areaRef}
@@ -413,11 +410,17 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
       >
         <CardSkin skinId={skinId}>
           <div className="relative size-full [transform-style:preserve-3d]">
-            <div className="absolute inset-0 flex flex-col justify-between [backface-visibility:hidden]">
-              <p className={`flex-1 overflow-hidden font-serif leading-snug ${textSize}`}>{content}</p>
-              <div className="mt-4 text-center text-xs uppercase tracking-widest opacity-70">
-                turn {sequence}
-              </div>
+            <div className="absolute inset-0 flex flex-col [backface-visibility:hidden]">
+              <CardFace
+                className="min-h-0 w-full flex-1"
+                content={content}
+                footer={
+                  <CardFooterFrame
+                    label={<p className={cardFooterLabelClass}>turn {sequence}</p>}
+                    actions={<span aria-hidden className="block h-8 w-0" />}
+                  />
+                }
+              />
             </div>
             <div className="absolute inset-0 flex items-center justify-center rounded bg-tappen-blue-900 [backface-visibility:hidden] [transform:rotateY(180deg)]">
               <div className="flex size-[86%] items-center justify-center rounded-sm border-2 border-dashed border-tappen-sunset-500/80">
