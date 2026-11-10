@@ -37,7 +37,7 @@ function prismaTx(tx: Tx): BoxTx {
     },
     async lockCode(codeHash) {
       const locked = await tx.$queryRaw<Array<{ id: string }>>`
-        SELECT id FROM HomeBoxCode WHERE codeHash = ${codeHash} FOR UPDATE
+        SELECT "id" FROM "HomeBoxCode" WHERE "codeHash" = ${codeHash} FOR UPDATE
       `;
       const id = locked[0]?.id;
       if (!id) return null;
@@ -115,7 +115,7 @@ function prismaTx(tx: Tx): BoxTx {
     },
     async premiumSkinId() {
       const product = await tx.product.findFirst({
-        where: { name: "Premium", type: "SUBSCRIPTION" },
+        where: { name: { equals: "Premium", mode: "insensitive" }, type: "SUBSCRIPTION" },
         include: { skins: { select: { id: true } } },
       });
       return premiumSkinIdFromProduct(product?.skins.map((skin) => skin.id) ?? []);
@@ -130,7 +130,7 @@ function prismaTx(tx: Tx): BoxTx {
     },
     async lockOrder(id) {
       const locked = await tx.$queryRaw<Array<{ id: string }>>`
-        SELECT id FROM HomeOrder WHERE id = ${id} FOR UPDATE
+        SELECT "id" FROM "HomeOrder" WHERE "id" = ${id} FOR UPDATE
       `;
       if (!locked[0]) return null;
       return tx.homeOrder.findUnique({

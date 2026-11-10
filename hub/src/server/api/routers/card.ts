@@ -13,8 +13,8 @@ export const cardRouter = createTRPCRouter({
     const cards = await db.card.findMany({
       where: {
         author: {
-          name: "Tappen",
-          email: "admio@tappen.app",
+          name: { equals: "Tappen", mode: "insensitive" },
+          email: { equals: "admio@tappen.app", mode: "insensitive" },
           emailVerified: { not: null },
         },
         nsfw: false,
@@ -305,9 +305,9 @@ export const cardRouter = createTRPCRouter({
 
       const existingTags = await ctx.db.tag.findMany({});
 
-      const tappenAccount = await ctx.db.user.findUnique({
+      const tappenAccount = await ctx.db.user.findFirst({
         where: {
-          email: env.TAPPEN_MAIL,
+          email: { equals: env.TAPPEN_MAIL, mode: "insensitive" },
         },
       });
       const lowerCaseTags = tags?.map((tag) => tag.toLowerCase()) ?? []; // Add this line
@@ -320,10 +320,10 @@ export const cardRouter = createTRPCRouter({
       });
 
       const tagsToConnect = existingTags.filter((t) =>
-        lowerCaseTags.includes(t.name),
+        lowerCaseTags.includes(t.name.toLowerCase()),
       ); // Modify this line
       const tagsToCreate =
-        filteredTags.filter((t) => !existingTags.some((tg) => tg.name === t)) ??
+        filteredTags.filter((t) => !existingTags.some((tg) => tg.name.toLowerCase() === t)) ??
         []; // Modify this line
 
       let skinToConnect;
@@ -335,7 +335,7 @@ export const cardRouter = createTRPCRouter({
       if (!existingSkin) {
         const defaultSkin = await ctx.db.skin.findFirst({
           where: {
-            name: "default",
+            name: { equals: "default", mode: "insensitive" },
           },
         });
         skinToConnect = defaultSkin!.id;
@@ -389,9 +389,9 @@ export const cardRouter = createTRPCRouter({
       }
 
       const existingTags = await ctx.db.tag.findMany({});
-      const tappenAccount = await ctx.db.user.findUnique({
+      const tappenAccount = await ctx.db.user.findFirst({
         where: {
-          email: env.TAPPEN_MAIL,
+          email: { equals: env.TAPPEN_MAIL, mode: "insensitive" },
         },
       });
       const lowerCaseTags = tags?.map((tag) => tag.toLocaleLowerCase());
@@ -410,7 +410,7 @@ export const cardRouter = createTRPCRouter({
         lowerCaseTags?.includes(t.name.toLocaleLowerCase()),
       );
       const tagsToCreate =
-        filteredTags.filter((t) => !existingTags.some((tg) => tg.name === t)) ??
+        filteredTags.filter((t) => !existingTags.some((tg) => tg.name.toLowerCase() === t)) ??
         [];
       const tagsToDisconnect = existingCard.tags.filter(
         (t) => !lowerCaseTags?.includes(t.name.toLocaleLowerCase()),
@@ -425,7 +425,7 @@ export const cardRouter = createTRPCRouter({
       if (!existingSkin) {
         const defaultSkin = await ctx.db.skin.findFirst({
           where: {
-            name: "default",
+            name: { equals: "default", mode: "insensitive" },
           },
         });
         skinToConnect = defaultSkin!.id;

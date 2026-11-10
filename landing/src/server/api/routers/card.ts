@@ -13,7 +13,7 @@ export const cardRouter = createTRPCRouter({
       take:7,
       where:{
         author:{
-          name: "Tappen"
+          name: { equals: "Tappen", mode: "insensitive" }
         }
       },
       select: {

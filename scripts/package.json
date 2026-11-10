@@ -1,0 +1,19 @@
+{
+  "name": "tappen-mysql-to-postgres",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "copy": "tsx migrate-mysql-to-postgres.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "mysql2": "^3.15.3",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.27",
+    "@types/pg": "^8.15.6",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

@@ -14,7 +14,7 @@ export const skinRouter = createTRPCRouter({
       where:{
         OR: [
           { id: input },
-          { name: input }
+          { name: { equals: input, mode: "insensitive" } }
         ]
       },
       include:{

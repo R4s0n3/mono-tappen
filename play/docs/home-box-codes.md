@@ -65,7 +65,7 @@ A Home order refund does **not** void unused codes and does **not** revoke a cla
 
 ## Deploy
 
-Do not run `prisma db push`, `prisma migrate dev`, or `prisma migrate reset` against production. From `play/`, after the backup and the baseline resolve described in `docs/migrations.md`:
+Do not run `prisma db push`, `prisma migrate dev`, or `prisma migrate reset` against production. `HomeBoxCode` and `HomeBoxAttempt` are part of the PostgreSQL baseline. From `play/`, after the backup and the MySQL copy described in `docs/migrations.md`:
 
 ```bash
 DATABASE_URL="<production DATABASE_URL>" npx prisma migrate deploy

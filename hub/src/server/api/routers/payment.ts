@@ -178,7 +178,7 @@ export const paymentRouter = createTRPCRouter({
       }
 
       const existingProduct = await ctx.db.product.findFirst({
-        where: { name: "Premium", type: "SUBSCRIPTION" },
+        where: { name: { equals: "Premium", mode: "insensitive" }, type: "SUBSCRIPTION" },
       });
       if (!existingProduct) {
         throw new TRPCError({ code: "NOT_FOUND", message: "product not found." });

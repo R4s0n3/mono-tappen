@@ -1,7 +1,7 @@
 # Tappen — Multiplayer Rooms Implementation Plan
 
 **Audience:** implementing agent with write access to all three repos.
-**Stack:** Next.js, tRPC, Prisma, MySQL.
+**Stack:** Next.js, tRPC, Prisma, PostgreSQL.
 **Repos / domains:**
 - `tappen.app` — marketing / public homepage
 - `play.tappen.app` — the game client

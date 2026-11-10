@@ -13,7 +13,8 @@ export const tagRouter = createTRPCRouter({
     return ctx.db.tag.findMany({
       where:{
         name:{
-          not: "tappen"
+          not: "tappen",
+          mode: "insensitive",
         }
       },
     })
@@ -23,7 +24,8 @@ export const tagRouter = createTRPCRouter({
     return ctx.db.tag.findMany({
       where:{
         name:{
-          not: "tappen"
+          not: "tappen",
+          mode: "insensitive",
         }
       },
       take: 6,
@@ -40,7 +42,7 @@ export const tagRouter = createTRPCRouter({
 
     const existingTag = await ctx.db.tag.findFirst({
         where:{
-            name: input.name
+            name: { equals: input.name, mode: "insensitive" }
         }
     })
 
