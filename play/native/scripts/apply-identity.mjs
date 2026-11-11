@@ -31,6 +31,13 @@ export function readIdentity(file = path.join(root, "app.identity.json")) {
   return identity;
 }
 
+export function withDisplayName(plist, displayName) {
+  return plist.replace(
+    /(<key>CFBundleDisplayName<\/key>\s*<string>)[^<]*(<\/string>)/,
+    `$1${displayName}$2`,
+  );
+}
+
 function familySetting(family) {
   return family.includes(",") ? `"${family}"` : family;
 }
@@ -59,10 +66,7 @@ export function applyIdentity(identity = readIdentity()) {
     );
   fs.writeFileSync(pbxPath, pbx);
 
-  const plist = fs.readFileSync(plistPath, "utf8").replace(
-    /(<key>CFBundleDisplayName<\/key>\s*<string>)[^<]*(<\/string>)/,
-    `$1${identity.displayName}$2`,
-  );
+  const plist = withDisplayName(fs.readFileSync(plistPath, "utf8"), identity.displayName);
   fs.writeFileSync(plistPath, plist);
   return identity;
 }
