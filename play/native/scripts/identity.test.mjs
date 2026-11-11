@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { readIdentity } from "./apply-identity.mjs";
+import { IOS_DEPLOYMENT_TARGET, readIdentity } from "./apply-identity.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -27,6 +27,20 @@ describe("app identity", () => {
     assert.match(pbx, /TARGETED_DEVICE_FAMILY = 1;/);
     assert.doesNotMatch(pbx, /TARGETED_DEVICE_FAMILY = "1,2"/);
     assert.doesNotMatch(pbx, /armv7/);
+    assert.equal(IOS_DEPLOYMENT_TARGET, "15.0");
+    assert.equal(pbx.match(/IPHONEOS_DEPLOYMENT_TARGET = 15\.0;/g)?.length, 4);
+    assert.doesNotMatch(pbx, /IPHONEOS_DEPLOYMENT_TARGET = 14\.0;/);
+  });
+
+  it("keeps pods on iOS 15 after pod install", () => {
+    const podfile = fs.readFileSync(path.join(root, "ios/App/Podfile"), "utf8");
+    assert.match(podfile, /platform :ios, '15\.0'/);
+    assert.match(podfile, /assertDeploymentTarget\(installer\)/);
+    assert.match(
+      podfile,
+      /assertDeploymentTarget\(installer\)[\s\S]*IPHONEOS_DEPLOYMENT_TARGET'\] = '15\.0'/,
+    );
+    assert.doesNotMatch(podfile, /platform :ios, '14\.0'/);
   });
 
   it("matches the Info.plist release settings", () => {
