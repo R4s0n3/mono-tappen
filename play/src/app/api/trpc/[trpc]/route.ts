@@ -1,9 +1,10 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 import { env } from "@/env";
 import { appRouter } from "@/server/api/root";
 import { createTRPCContext } from "@/server/api/trpc";
+import { NATIVE_CORS_HEADERS, nativeOriginAllowed } from "@/server/native-cors";
 
 /**
  * This wraps the `createTRPCContext` helper and provides the required context for the tRPC API when
@@ -15,8 +16,21 @@ const createContext = async (req: NextRequest) => {
   });
 };
 
-const handler = (req: NextRequest) =>
-  fetchRequestHandler({
+function applyNativeCors(response: Response, origin: string | null): Response {
+  if (!origin || !nativeOriginAllowed(origin)) return response;
+  const headers = new Headers(response.headers);
+  headers.set("Access-Control-Allow-Origin", origin);
+  headers.set("Vary", "Origin");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
+const handler = async (req: NextRequest) => {
+  const origin = req.headers.get("origin");
+  const response = await fetchRequestHandler({
     endpoint: "/api/trpc",
     req,
     router: appRouter,
@@ -30,5 +44,24 @@ const handler = (req: NextRequest) =>
           }
         : undefined,
   });
+  return applyNativeCors(response, origin);
+};
+
+export function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get("origin");
+  if (!origin || !nativeOriginAllowed(origin)) {
+    return new NextResponse(null, { status: 204 });
+  }
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": origin,
+      Vary: "Origin",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": NATIVE_CORS_HEADERS,
+      "Access-Control-Max-Age": "86400",
+    },
+  });
+}
 
 export { handler as GET, handler as POST };

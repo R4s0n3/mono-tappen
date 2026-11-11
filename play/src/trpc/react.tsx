@@ -7,6 +7,7 @@ import { type inferRouterInputs, type inferRouterOutputs } from "@trpc/server";
 import { useState } from "react";
 import SuperJSON from "superjson";
 
+import { getRuntime } from "@/client/runtime";
 import { type AppRouter } from "@/server/api/root";
 
 const createQueryClient = () => new QueryClient();
@@ -51,9 +52,11 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
         httpBatchStreamLink({
           transformer: SuperJSON,
           url: getBaseUrl() + "/api/trpc",
-          headers: () => {
+          headers: async () => {
             const headers = new Headers();
             headers.set("x-trpc-source", "nextjs-react");
+            const token = await getRuntime().getAccessToken?.();
+            if (token) headers.set("Authorization", `Bearer ${token}`);
             return headers;
           },
         }),
@@ -71,6 +74,8 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
 }
 
 function getBaseUrl() {
+  const configured = getRuntime().apiBaseUrl?.replace(/\/$/, "");
+  if (configured) return configured;
   if (typeof window !== "undefined") return window.location.origin;
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return `http://localhost:${process.env.PORT ?? 3000}`;

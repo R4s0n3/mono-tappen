@@ -129,7 +129,7 @@ export default {
           right: '0',
           bottom: '0',
           zIndex: '1',
-          maskImage: 'url(../../public/skins/borders/classic.svg)',
+          maskImage: 'url(/skins/borders/classic.svg)',
           maskSize: '100% 100%',
           pointerEvents: 'none',
           border: '15px transparent',

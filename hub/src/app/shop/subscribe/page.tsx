@@ -1,7 +1,9 @@
 import Link from "next/link";
 
 import { getServerAuthSession } from "@/server/auth";
+import { db } from "@/server/db";
 import { DashNavigation } from "@/app/_components/dash-navigation";
+import { premiumOffer, premiumSubscriptionOrder, premiumSubscriptionWhere } from "@/server/payment/premium-product";
 
 import { CheckIcon, XMarkIcon } from "@heroicons/react/24/solid";
 
@@ -10,6 +12,16 @@ import PayNow from "../_components/pay-now";
 export default async function SupscribePage() {
 
   const session = await getServerAuthSession();
+  const premiumProduct = session
+    ? await db.product.findFirst({
+        where: premiumSubscriptionWhere,
+        orderBy: premiumSubscriptionOrder,
+        select: { price: true },
+      })
+    : null;
+  // Checkout charges the same row. The fallback is only a label: a missing or
+  // non-positive price cannot be purchased.
+  const premium = premiumOffer(premiumProduct);
 
   
   type SubInfoItem = {
@@ -20,7 +32,8 @@ export default async function SupscribePage() {
 type SubInfo = {
     title: string,
     features: SubInfoItem[],
-    price: number
+    price: number,
+    purchasable: boolean,
 }
 
 const base_features:SubInfoItem[] = [
@@ -43,19 +56,21 @@ const premium_features:SubInfoItem[] = [
 const BASE = {
     title: "basic",
     features: base_features,
-    price: 0
+    price: 0,
+    purchasable: false,
 }
 
 const PREMIUM = {
     title: "premium",
     features: premium_features,
-    price: 799
+    price: premium.price,
+    purchasable: premium.purchasable,
 }
 
 const SUBS_INFO:SubInfo[] = [ BASE, PREMIUM ]
 
 function createSubInfoItems(subInfo: SubInfo){
-    const { title, features, price} = subInfo
+    const { title, features, price, purchasable} = subInfo
     function createInfo(info: SubInfoItem){
 
         // Check if info.value is not a boolean and render it as a string
@@ -76,7 +91,10 @@ function createSubInfoItems(subInfo: SubInfo){
     </ul>
     <div className="flex justify-between items-center">
     <span>{(price / 100).toFixed(2)}€</span>
-    {price > 0 && <PayNow user={session?.user.id ?? ""} products={["tappen_premium"]} />}
+    {purchasable ? <PayNow user={session?.user.id ?? ""} products={["tappen_premium"]} /> : null}
+    {price > 0 && !purchasable ? (
+      <span className="rounded bg-tappen-blue-900/40 p-2 px-3 text-sm">Unavailable</span>
+    ) : null}
     </div>
     </div>
     </div>

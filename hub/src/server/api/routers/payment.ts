@@ -8,6 +8,7 @@ import {
   fulfillPaidCheckoutSession,
   invoicePdfForSession,
 } from "@/server/payment/fulfillment";
+import { premiumSubscriptionOrder, premiumSubscriptionWhere } from "@/server/payment/premium-product";
 import { stripe } from "@/server/payment/stripe";
 
 const RECENT_RECEIPTS_COUNT = 5;
@@ -178,7 +179,8 @@ export const paymentRouter = createTRPCRouter({
       }
 
       const existingProduct = await ctx.db.product.findFirst({
-        where: { name: { equals: "Premium", mode: "insensitive" }, type: "SUBSCRIPTION" },
+        where: premiumSubscriptionWhere,
+        orderBy: premiumSubscriptionOrder,
       });
       if (!existingProduct) {
         throw new TRPCError({ code: "NOT_FOUND", message: "product not found." });

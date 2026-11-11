@@ -20,7 +20,7 @@ export default async function Home({ searchParams }: { searchParams: { mode: str
 
   const hasGameMode = Object.values(searchParams).some(sm => sm !== undefined)
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 text-tappen-blue-200 overflow-hidden relative gap-8 p-8 pt-12 z-0">
+    <main className="flex min-h-screen flex-col items-center justify-between bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 text-tappen-blue-200 overflow-hidden relative gap-8 px-8 pt-[max(3rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] z-0">
       <Image className="w-8" width={69} height={69} alt="tappen-app-logo" src="logo.svg" />
       {/* <button type="button"   className="absolute flex gap-2 justify-center items-center text-center top-8 left-6 p-1 px-6 bg-tappen-purple-300 rounded-full">
         <AdjustmentsHorizontalIcon className="size-4" /> filter</button> */}

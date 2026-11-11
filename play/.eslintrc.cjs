@@ -14,6 +14,7 @@ const config = {
   ],
   "ignorePatterns":[
     "templates/",
+    "native/**",
     "**/*.test.ts",
   ],
   "rules": {

@@ -204,9 +204,8 @@ export default async function Legal() {
                   <br /> Avoid topics that might alienate or offend. Keep your
                   cards welcoming for diverse groups. <br />
                   <b>Appropriate for the Setting:</b>
-                  <br /> While the game may include drinking, ensure prompts
-                  remain playful and steer clear of harmful or overly explicit
-                  themes.
+                  <br /> Keep prompts playful, and steer clear of harmful or
+                  overly explicit themes.
                 </Paragraph>
               </div>
               <div>

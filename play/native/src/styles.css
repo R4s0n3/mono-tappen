@@ -1,0 +1,24 @@
+@import "@fontsource/titillium-web/400.css";
+@import "@fontsource/titillium-web/600.css";
+@import "@fontsource/titillium-web/700.css";
+@import "@fontsource/playfair-display/400.css";
+@import "@fontsource/playfair-display/700.css";
+@import "@fontsource/playfair-display/400-italic.css";
+@import "@fontsource/lilita-one/400.css";
+@import "../../src/styles/globals.css";
+
+:root {
+  --font-sans: "Titillium Web", sans-serif;
+  --font-serif: "Playfair Display", serif;
+  --font-lilita-one: "Lilita One", system-ui, sans-serif;
+}
+
+.fontStyle_dark {
+  @apply text-tappen-blue-900;
+}
+.fontStyle_mid {
+  @apply text-tappen-blue-500;
+}
+.fontStyle_light {
+  @apply text-tappen-blue-100;
+}

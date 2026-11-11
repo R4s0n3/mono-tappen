@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getRuntime } from "@/client/runtime";
 import { restTransform, sanitizeCardTransform, type CardTransform } from "@/shared/card-transform";
 import type { RoomState, TransformEvent } from "./types";
 
@@ -54,8 +55,12 @@ export function useRoomSocket(
 
     const connect = () => {
       if (closed) return;
-      const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-      ws = new WebSocket(`${proto}//${window.location.host}/ws`);
+      const configured = getRuntime().wsUrl;
+      const url =
+        configured && configured.length > 0
+          ? configured
+          : `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws`;
+      ws = new WebSocket(url);
       wsRef.current = ws;
       awaitSnapshot = true;
 
