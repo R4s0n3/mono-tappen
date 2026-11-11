@@ -3,6 +3,7 @@ import { createSign, generateKeyPairSync } from "node:crypto";
 import { describe, it } from "node:test";
 
 import { APPLE_AUDIENCE, APPLE_ISSUER, AppleTokenError, sha256Hex, verifyAppleIdentityToken, type AppleJwk } from "./apple-token";
+import { APPLE_JWKS_REFRESH_COOLDOWN_MS, APPLE_JWKS_TTL_MS, clearAppleJwksCache, loadAppleJwks } from "./native-session";
 
 const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
 const jwk = publicKey.export({ format: "jwk" }) as AppleJwk;
@@ -65,5 +66,35 @@ describe("verifyAppleIdentityToken", () => {
         return error instanceof AppleTokenError && error.message === message;
       });
     }
+  });
+});
+
+describe("loadAppleJwks", () => {
+  const keys = [{ kty: "RSA", kid: "apple-key" }];
+
+  it("refetches an unknown key only after the cooldown", async () => {
+    clearAppleJwksCache();
+    let calls = 0;
+    const fetchImpl: typeof fetch = async (url, init) => {
+      calls += 1;
+      assert.equal(String(url), "https://appleid.apple.com/auth/keys");
+      assert.ok(init?.signal);
+      return new Response(JSON.stringify({ keys }), { status: 200 });
+    };
+    const fetchedAt = 1_000_000;
+    const first = await loadAppleJwks(fetchImpl, { now: fetchedAt });
+    const duringCooldown = await loadAppleJwks(fetchImpl, {
+      now: fetchedAt + APPLE_JWKS_REFRESH_COOLDOWN_MS - 1,
+      force: true,
+    });
+    assert.equal(calls, 1);
+    assert.deepEqual(duringCooldown, first);
+
+    await loadAppleJwks(fetchImpl, { now: fetchedAt + APPLE_JWKS_REFRESH_COOLDOWN_MS, force: true });
+    assert.equal(calls, 2);
+
+    await loadAppleJwks(fetchImpl, { now: fetchedAt + APPLE_JWKS_REFRESH_COOLDOWN_MS + APPLE_JWKS_TTL_MS });
+    assert.equal(calls, 3);
+    clearAppleJwksCache();
   });
 });

@@ -34,9 +34,13 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    void getAccessToken().then((value) => {
-      if (!cancelled) setToken(value);
-    });
+    void getAccessToken()
+      .then((value) => {
+        if (!cancelled) setToken(value);
+      })
+      .catch(() => {
+        if (!cancelled) setToken(null);
+      });
     return () => {
       cancelled = true;
     };
@@ -85,10 +89,17 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         } catch {
           setError("Signed out on this iPhone. The server could not be reached.");
         } finally {
-          await clearAccessToken();
           setToken(null);
-          await utils.invalidate();
-          setBusy(false);
+          try {
+            await clearAccessToken();
+          } catch {
+            // The in-memory token is already cleared. A Keychain error must not leave the app signed in.
+          }
+          try {
+            await utils.invalidate();
+          } finally {
+            setBusy(false);
+          }
         }
       },
       async deleteAccount() {
@@ -96,9 +107,13 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         setError(null);
         try {
           await deleteMutation.mutateAsync({ confirm: "DELETE" });
-          await clearAccessToken();
           setToken(null);
-          await utils.invalidate();
+          try {
+            await clearAccessToken();
+            await utils.invalidate();
+          } catch {
+            // The account is already deleted. Local cleanup is best-effort.
+          }
         } catch (caught) {
           setError(caught instanceof Error ? caught.message : "Could not delete the account.");
         } finally {

@@ -5,6 +5,13 @@ import { useAccount } from "../account-session";
 import { api } from "../platform/api";
 import { SignInWithAppleButton } from "./apple-button";
 
+function claimFailureMessage(code: string | undefined): string {
+  if (code === "BAD_REQUEST") return "This room is still live. Try again after the night ends.";
+  if (code === "UNAUTHORIZED") return "Sign in again to save this seat.";
+  if (code === "NOT_FOUND") return "This link does not match a seat in this room.";
+  return "Could not save this seat. Try again.";
+}
+
 export function ClaimScreen() {
   const [params] = useSearchParams();
   const room = params.get("room");
@@ -41,10 +48,11 @@ export function ClaimScreen() {
       {claim.data?.reason === "already_claimed" ? (
         <p className="max-w-xs text-lg text-tappen-blue-200">This seat is already attached to an account.</p>
       ) : null}
+      {claim.isError ? (
+        <p className="max-w-xs text-lg text-tappen-blue-200">{claimFailureMessage(claim.error.data?.code)}</p>
+      ) : null}
       {claim.data && !claim.data.claimed && claim.data.reason !== "already_claimed" ? (
-        <p className="max-w-xs text-lg text-tappen-blue-200">
-          The claim window for this room has passed, or the room is still live.
-        </p>
+        <p className="max-w-xs text-lg text-tappen-blue-200">The claim window for this room has passed.</p>
       ) : null}
       {account.error ? <p className="max-w-xs text-sm text-tappen-sunset-300">{account.error}</p> : null}
       <Link

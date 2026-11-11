@@ -42,13 +42,16 @@ export function planAppleSignIn(input: {
   byEmail: KnownAppleUser | null;
 }): AppleSignInPlan {
   const email = input.emailVerified ? normalizeEmail(input.email) : null;
-  const fill = (user: KnownAppleUser, attachSub: boolean): AppleSignInPlan => ({
-    kind: "existing",
-    userId: user.id,
-    setEmail: user.email ? null : email,
-    setName: user.name ? null : input.name,
-    attachSub,
-  });
+  const fill = (user: KnownAppleUser, attachSub: boolean): AppleSignInPlan => {
+    const emailOwnedByOther = input.byEmail !== null && input.byEmail.id !== user.id;
+    return {
+      kind: "existing",
+      userId: user.id,
+      setEmail: user.email !== null || emailOwnedByOther ? null : email,
+      setName: user.name ? null : input.name,
+      attachSub,
+    };
+  };
 
   if (input.bySub) return fill(input.bySub, false);
 

@@ -3,7 +3,7 @@ import { createVerify, generateKeyPairSync } from "node:crypto";
 import { describe, it } from "node:test";
 
 import { APPLE_AUDIENCE, APPLE_ISSUER } from "./apple-token";
-import { appleClientSecret, appleCredentialsFromEnv, revokeAppleRefreshToken } from "./apple-client";
+import { appleClientSecret, appleCredentialsFromEnv, exchangeAppleAuthorizationCode, revokeAppleRefreshToken } from "./apple-client";
 import { deleteNativeAccount, erasurePlan } from "./delete-account";
 
 const { privateKey, publicKey } = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
@@ -76,6 +76,47 @@ describe("Apple client secret and revoke", () => {
     });
     assert.equal(result, "revoked");
     assert.deepEqual(calls, ["https://appleid.apple.com/auth/revoke"]);
+  });
+
+  it("returns null when exchanging an authorization code throws", async () => {
+    const logs: string[] = [];
+    const refresh = await exchangeAppleAuthorizationCode("auth-code", {
+      env: {
+        APPLE_TEAM_ID: "TEAMID123",
+        APPLE_KEY_ID: "KEYID123",
+        APPLE_PRIVATE_KEY: "not-a-key",
+      },
+      log: (message) => logs.push(message),
+    });
+    assert.equal(refresh, null);
+    assert.match(logs[0] ?? "", /authorization code exchange failed/);
+  });
+
+  it("returns failed when the revoke key cannot be used", async () => {
+    const logs: string[] = [];
+    const result = await revokeAppleRefreshToken("refresh-token", {
+      env: {
+        APPLE_TEAM_ID: "TEAMID123",
+        APPLE_KEY_ID: "KEYID123",
+        APPLE_PRIVATE_KEY: "not-a-key",
+      },
+      log: (message) => logs.push(message),
+    });
+    assert.equal(result, "failed");
+    assert.match(logs[0] ?? "", /Apple token revoke failed/);
+  });
+
+  it("still erases the account when revoke throws", async () => {
+    let erased = false;
+    const result = await deleteNativeAccount({
+      refreshToken: "refresh-token",
+      revoke: () => Promise.reject(new Error("bad key")),
+      erase: async () => {
+        erased = true;
+      },
+    });
+    assert.equal(result, "failed");
+    assert.equal(erased, true);
   });
 });
 

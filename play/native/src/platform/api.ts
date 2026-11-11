@@ -17,5 +17,5 @@
  */
 export { api } from "@/trpc/react";
 
-export { getAccessToken, signInWithApple } from "./auth";
+export { getAccessToken } from "./auth";
 export { purchase, purchaseConfig, storeKitProducts } from "./purchases";

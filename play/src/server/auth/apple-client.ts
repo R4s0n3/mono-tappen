@@ -4,6 +4,7 @@ import { APPLE_AUDIENCE, APPLE_ISSUER } from "./apple-token";
 
 export const APPLE_ENV_KEYS = ["APPLE_TEAM_ID", "APPLE_KEY_ID", "APPLE_PRIVATE_KEY"] as const;
 
+const APPLE_HTTP_TIMEOUT_MS = 10_000;
 const REVOKE_SKIPPED =
   "Apple token revoke skipped: APPLE_TEAM_ID, APPLE_KEY_ID, or APPLE_PRIVATE_KEY is not set";
 const REVOKE_NO_TOKEN =
@@ -74,23 +75,29 @@ export async function exchangeAppleAuthorizationCode(
     return null;
   }
   const fetchImpl = deps.fetchImpl ?? fetch;
-  const body = new URLSearchParams({
-    grant_type: "authorization_code",
-    code: authorizationCode,
-    client_id: credentials.clientId,
-    client_secret: appleClientSecret(credentials, deps.now ?? new Date()),
-  });
-  const response = await fetchImpl("https://appleid.apple.com/auth/token", {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body,
-  });
-  if (!response.ok) {
-    log(`Apple authorization code exchange failed: ${response.status}`);
+  try {
+    const body = new URLSearchParams({
+      grant_type: "authorization_code",
+      code: authorizationCode,
+      client_id: credentials.clientId,
+      client_secret: appleClientSecret(credentials, deps.now ?? new Date()),
+    });
+    const response = await fetchImpl("https://appleid.apple.com/auth/token", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body,
+      signal: AbortSignal.timeout(APPLE_HTTP_TIMEOUT_MS),
+    });
+    if (!response.ok) {
+      log(`Apple authorization code exchange failed: ${response.status}`);
+      return null;
+    }
+    const json = (await response.json()) as { refresh_token?: unknown };
+    return typeof json.refresh_token === "string" && json.refresh_token !== "" ? json.refresh_token : null;
+  } catch (error) {
+    log(`Apple authorization code exchange failed: ${error instanceof Error ? error.message : "network"}`);
     return null;
   }
-  const json = (await response.json()) as { refresh_token?: unknown };
-  return typeof json.refresh_token === "string" && json.refresh_token !== "" ? json.refresh_token : null;
 }
 
 export async function revokeAppleRefreshToken(
@@ -113,17 +120,18 @@ export async function revokeAppleRefreshToken(
     return "skipped";
   }
   const fetchImpl = deps.fetchImpl ?? fetch;
-  const body = new URLSearchParams({
-    client_id: credentials.clientId,
-    client_secret: appleClientSecret(credentials, deps.now ?? new Date()),
-    token: refreshToken,
-    token_type_hint: "refresh_token",
-  });
   try {
+    const body = new URLSearchParams({
+      client_id: credentials.clientId,
+      client_secret: appleClientSecret(credentials, deps.now ?? new Date()),
+      token: refreshToken,
+      token_type_hint: "refresh_token",
+    });
     const response = await fetchImpl("https://appleid.apple.com/auth/revoke", {
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded" },
       body,
+      signal: AbortSignal.timeout(APPLE_HTTP_TIMEOUT_MS),
     });
     if (!response.ok) {
       log(`Apple token revoke failed: ${response.status}`);

@@ -8,15 +8,27 @@ import { erasurePlan } from "./delete-account";
 import type { RequestSession } from "./request-session";
 
 const JWKS_URL = "https://appleid.apple.com/auth/keys";
-let jwksCache: { keys: AppleJwk[]; expiresAt: number } | null = null;
+export const APPLE_JWKS_TTL_MS = 60 * 60 * 1000;
+export const APPLE_JWKS_REFRESH_COOLDOWN_MS = 5 * 60 * 1000;
+const JWKS_FETCH_TIMEOUT_MS = 10_000;
+let jwksCache: { keys: AppleJwk[]; fetchedAt: number } | null = null;
 
-export async function loadAppleJwks(fetchImpl: typeof fetch, now = Date.now()): Promise<AppleJwk[]> {
-  if (jwksCache && jwksCache.expiresAt > now) return jwksCache.keys;
-  const response = await fetchImpl(JWKS_URL);
+export async function loadAppleJwks(
+  fetchImpl: typeof fetch,
+  options: { now?: number; force?: boolean } = {},
+): Promise<AppleJwk[]> {
+  const now = options.now ?? Date.now();
+  if (jwksCache) {
+    const age = now - jwksCache.fetchedAt;
+    const withinTtl = age < APPLE_JWKS_TTL_MS;
+    const cooldownElapsed = age >= APPLE_JWKS_REFRESH_COOLDOWN_MS;
+    if (withinTtl && !(options.force && cooldownElapsed)) return jwksCache.keys;
+  }
+  const response = await fetchImpl(JWKS_URL, { signal: AbortSignal.timeout(JWKS_FETCH_TIMEOUT_MS) });
   if (!response.ok) throw new Error(`Apple JWKS request failed: ${response.status}`);
   const body = (await response.json()) as { keys?: AppleJwk[] };
   const keys = body.keys ?? [];
-  jwksCache = { keys, expiresAt: now + 60 * 60 * 1000 };
+  jwksCache = { keys, fetchedAt: now };
   return keys;
 }
 

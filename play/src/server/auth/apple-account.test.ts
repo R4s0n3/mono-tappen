@@ -75,6 +75,24 @@ describe("planAppleSignIn", () => {
     });
   });
 
+  it("does not copy an email that already belongs to another account", () => {
+    const plan = planAppleSignIn({
+      sub: "apple-2",
+      email: "person@example.com",
+      emailVerified: true,
+      name: null,
+      bySub: { id: "user-2", email: null, name: null, appleSub: "apple-2" },
+      byEmail: { ...existing, appleSub: "apple-1" },
+    });
+    assert.deepEqual(plan, {
+      kind: "existing",
+      userId: "user-2",
+      setEmail: null,
+      setName: null,
+      attachSub: false,
+    });
+  });
+
   it("does not attach a second Apple sub to an account that already has one", () => {
     const plan = planAppleSignIn({
       sub: "apple-2",

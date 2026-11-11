@@ -3,7 +3,7 @@ import { z } from "zod";
 import { revokeAppleRefreshToken } from "@/server/auth/apple-client";
 import { AppleTokenError } from "@/server/auth/apple-token";
 import { deleteNativeAccount } from "@/server/auth/delete-account";
-import { clearAppleJwksCache, eraseUserAccount, loadAppleJwks, signInWithAppleIdentity } from "@/server/auth/native-session";
+import { eraseUserAccount, loadAppleJwks, signInWithAppleIdentity } from "@/server/auth/native-session";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/api/trpc";
 import { loadEntitlement } from "@/server/home/entitlement-db";
 import { TRPCError } from "@trpc/server";
@@ -34,8 +34,7 @@ export const accountRouter = createTRPCRouter({
           return await signInWithAppleIdentity(ctx.db, input, { keys });
         } catch (error) {
           if (!(error instanceof AppleTokenError) || error.message !== "key") throw error;
-          clearAppleJwksCache();
-          keys = await loadAppleJwks(fetch);
+          keys = await loadAppleJwks(fetch, { force: true });
           return await signInWithAppleIdentity(ctx.db, input, { keys });
         }
       } catch (error) {

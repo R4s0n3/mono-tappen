@@ -43,7 +43,12 @@ export async function deleteNativeAccount(input: {
   revoke: (refreshToken: string | null) => Promise<"revoked" | "skipped" | "failed">;
   erase: () => Promise<void>;
 }): Promise<"revoked" | "skipped" | "failed"> {
-  const result = await input.revoke(input.refreshToken);
+  let result: "revoked" | "skipped" | "failed";
+  try {
+    result = await input.revoke(input.refreshToken);
+  } catch {
+    result = "failed";
+  }
   await input.erase();
   return result;
 }

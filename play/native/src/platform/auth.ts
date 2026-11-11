@@ -12,7 +12,10 @@ function prepareKeychain(): Promise<void> {
   storageReady ??= (async () => {
     await SecureStorage.setSynchronize(false);
     await SecureStorage.setKeyPrefix("tappen.");
-  })();
+  })().catch((error: unknown) => {
+    storageReady = null;
+    throw error;
+  });
   return storageReady;
 }
 
@@ -24,9 +27,13 @@ export function rememberAccessToken(token: string | null): void {
 export async function getAccessToken(): Promise<string | null> {
   if (memoryToken) return memoryToken;
   if (!Capacitor.isNativePlatform()) return null;
-  await prepareKeychain();
-  const stored = await SecureStorage.get(TOKEN_KEY);
-  memoryToken = typeof stored === "string" && stored !== "" ? stored : null;
+  try {
+    await prepareKeychain();
+    const stored = await SecureStorage.get(TOKEN_KEY);
+    memoryToken = typeof stored === "string" && stored !== "" ? stored : null;
+  } catch {
+    memoryToken = null;
+  }
   return memoryToken;
 }
 
