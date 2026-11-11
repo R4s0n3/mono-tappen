@@ -2,7 +2,7 @@
 
 Dieser Build ist für interne Tester. Du archivierst ihn auf dem Mac und lädst ihn mit Xcode hoch. Es gibt noch kein Sign in with Apple. Solo-Spiel, Discover und Räume funktionieren ohne Account.
 
-Die App ist in v1 nur fürs iPhone, nur Hochformat. iPad ist absichtlich nicht dabei.
+Die App ist in v1 nur fürs iPhone, nur Hochformat. iPad ist absichtlich nicht dabei. Mindestversion ist iOS 15. Xcode 27 baut ein Target 14.0 nicht mehr.
 
 ## Eine Datei für Name und Bundle-ID
 
@@ -47,6 +47,8 @@ npx cap open ios
 `npm run cap:sync` macht Apply, Build und `cap sync` in einem Schritt. Danach trotzdem `npx cap open ios`.
 
 `--legacy-peer-deps` braucht es, weil `react-tinder-card` noch React 18 als Peer angibt. Das Play-Projekt macht das genauso.
+
+Nur dieses Verzeichnis installieren. Der Native-Build liest die Farben aus `play/tailwind.shared.ts` und braucht dafür kein `npm install` in `play/`.
 
 `npm run build` spricht immer `https://play.tappen.app` und `wss://play.tappen.app/ws` an. Eine `.env` mit localhost ändert den Release-Build nicht. In `capacitor.config.ts` darf kein `server.url` stehen. Die App lädt das lokale Bundle, nicht eine Website.
 

@@ -8,6 +8,9 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
+/** Xcode 27 rejects 14.0. Capacitor's podspec still asks for it; the Podfile overrides pods. */
+export const IOS_DEPLOYMENT_TARGET = "15.0";
+
 export function readIdentity(file = path.join(root, "app.identity.json")) {
   const identity = JSON.parse(fs.readFileSync(file, "utf8"));
   if (typeof identity.displayName !== "string" || identity.displayName.trim() === "") {
@@ -49,6 +52,10 @@ export function applyIdentity(identity = readIdentity()) {
     .replaceAll(
       /TARGETED_DEVICE_FAMILY = [^;]+;/g,
       `TARGETED_DEVICE_FAMILY = ${familySetting(identity.targetedDeviceFamily)};`,
+    )
+    .replaceAll(
+      /IPHONEOS_DEPLOYMENT_TARGET = [^;]+;/g,
+      `IPHONEOS_DEPLOYMENT_TARGET = ${IOS_DEPLOYMENT_TARGET};`,
     );
   fs.writeFileSync(pbxPath, pbx);
 
