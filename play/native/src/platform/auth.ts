@@ -1,13 +1,89 @@
-/**
- * M2 fills this in with Sign in with Apple only.
- * The identity token is verified on the play server, which issues the bearer
- * token `getAccessToken` returns. tRPC already attaches that header
- * (play/src/trpc/react.tsx). Discord and Google are not offered in this app.
- */
-export async function getAccessToken(): Promise<string | null> {
-  return null;
+import { SignInWithApple } from "@capacitor-community/apple-sign-in";
+import { Capacitor } from "@capacitor/core";
+import { SecureStorage } from "@aparajita/capacitor-secure-storage";
+
+const TOKEN_KEY = "bearer";
+const BUNDLE_ID = "app.tappen.ios";
+
+let memoryToken: string | null = null;
+let storageReady: Promise<void> | null = null;
+
+function prepareKeychain(): Promise<void> {
+  storageReady ??= (async () => {
+    await SecureStorage.setSynchronize(false);
+    await SecureStorage.setKeyPrefix("tappen.");
+  })();
+  return storageReady;
 }
 
-export async function signInWithApple(): Promise<void> {
-  throw new Error("Sign in with Apple is not in this build.");
+export function rememberAccessToken(token: string | null): void {
+  memoryToken = token;
+}
+
+/** Keychain on iOS. The browser preview keeps the token in memory only. */
+export async function getAccessToken(): Promise<string | null> {
+  if (memoryToken) return memoryToken;
+  if (!Capacitor.isNativePlatform()) return null;
+  await prepareKeychain();
+  const stored = await SecureStorage.get(TOKEN_KEY);
+  memoryToken = typeof stored === "string" && stored !== "" ? stored : null;
+  return memoryToken;
+}
+
+export async function saveAccessToken(token: string): Promise<void> {
+  memoryToken = token;
+  if (!Capacitor.isNativePlatform()) return;
+  await prepareKeychain();
+  await SecureStorage.set(TOKEN_KEY, token);
+}
+
+export async function clearAccessToken(): Promise<void> {
+  memoryToken = null;
+  if (!Capacitor.isNativePlatform()) return;
+  await prepareKeychain();
+  await SecureStorage.remove(TOKEN_KEY);
+}
+
+function randomNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+export type AppleCredential = {
+  nonce: string;
+  identityToken: string;
+  authorizationCode: string;
+  givenName: string | null;
+  familyName: string | null;
+};
+
+export async function requestAppleCredential(): Promise<AppleCredential> {
+  if (!Capacitor.isNativePlatform()) {
+    throw new Error("Sign in with Apple runs on the iPhone app.");
+  }
+  const nonce = randomNonce();
+  const result = await SignInWithApple.authorize({
+    clientId: BUNDLE_ID,
+    redirectURI: "https://play.tappen.app",
+    scopes: "email name",
+    nonce: await sha256Hex(nonce),
+  });
+  return {
+    nonce,
+    identityToken: result.response.identityToken,
+    authorizationCode: result.response.authorizationCode,
+    givenName: result.response.givenName,
+    familyName: result.response.familyName,
+  };
+}
+
+export function appleSignInCancelled(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /cancel/i.test(message);
 }

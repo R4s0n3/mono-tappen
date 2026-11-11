@@ -5,6 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import { configureRuntime } from "@/client/runtime";
 import { TRPCReactProvider } from "@/trpc/react";
 
+import { AccountProvider } from "./account-session";
 import { App } from "./App";
 import { resolveNativeEndpoints } from "./endpoints";
 import { getAccessToken } from "./platform/auth";
@@ -34,7 +35,9 @@ createRoot(root).render(
   <StrictMode>
     <BrowserRouter>
       <TRPCReactProvider>
-        <App />
+        <AccountProvider>
+          <App />
+        </AccountProvider>
       </TRPCReactProvider>
     </BrowserRouter>
   </StrictMode>,

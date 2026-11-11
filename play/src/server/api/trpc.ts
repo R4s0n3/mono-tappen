@@ -12,6 +12,8 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { getServerAuthSession } from "@/server/auth";
+import { sessionForBearerToken } from "@/server/auth/native-session";
+import { resolveRequestSession } from "@/server/auth/request-session";
 import { db } from "@/server/db";
 
 /**
@@ -27,11 +29,15 @@ import { db } from "@/server/db";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  const session = await getServerAuthSession();
+  const auth = await resolveRequestSession(opts.headers, {
+    lookupBearer: (tokenHash) => sessionForBearerToken(db, tokenHash),
+    cookieSession: () => getServerAuthSession(),
+  });
 
   return {
     db,
-    session,
+    session: auth.session,
+    bearerTokenHash: auth.bearerTokenHash,
     ...opts,
   };
 };
@@ -96,7 +102,7 @@ export const publicProcedure = t.procedure;
  * @see https://trpc.io/docs/procedures
  */
 export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.session || !ctx.session.user) {
+  if (!ctx.session?.user) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return next({

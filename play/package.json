@@ -12,7 +12,7 @@
     "dev": "node server.js",
     "postinstall": "prisma generate",
     "lint": "next lint",
-    "test": "node --import tsx --test src/server/home/box-code.test.ts src/server/native-cors.test.ts",
+    "test": "node --import tsx --test src/server/home/box-code.test.ts src/server/native-cors.test.ts src/server/auth/apple-token.test.ts src/server/auth/apple-account.test.ts src/server/auth/bearer.test.ts src/server/auth/apple-client.test.ts",
     "box-codes": "node --import tsx scripts/home-box-codes.ts",
     "sim:card": "node scripts/ws-card-relay.mjs",
     "start": "NODE_ENV=production node server.js"
