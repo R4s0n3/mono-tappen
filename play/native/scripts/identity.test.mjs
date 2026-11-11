@@ -66,6 +66,11 @@ describe("app identity", () => {
   it("compiles the scene delegate that hosts the Capacitor bridge", () => {
     const pbx = fs.readFileSync(path.join(root, "ios/App/App.xcodeproj/project.pbxproj"), "utf8");
     assert.match(pbx, /SceneDelegate\.swift in Sources/);
+    assert.match(pbx, /CODE_SIGN_ENTITLEMENTS = App\/App\.entitlements;/);
+    assert.match(pbx, /DEVELOPMENT_TEAM = 9XGAA62775;/);
+    const entitlements = fs.readFileSync(path.join(root, "ios/App/App/App.entitlements"), "utf8");
+    assert.match(entitlements, /<key>com\.apple\.developer\.applesignin<\/key>/);
+    assert.match(entitlements, /<string>Default<\/string>/);
     const scene = fs.readFileSync(path.join(root, "ios/App/App/SceneDelegate.swift"), "utf8");
     assert.match(scene, /UIStoryboard\(name: "Main"/);
     assert.match(scene, /ApplicationDelegateProxy\.shared/);

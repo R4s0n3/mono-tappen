@@ -1,9 +1,10 @@
 import { useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import GameCards, { type GameCardsHandle } from "@/app/_components/game-cards";
 import { ModePicker } from "@/app/_components/mode-picker";
 
+import { useAccount } from "../account-session";
 import { api } from "../platform/api";
 import { PlayDock } from "./play-dock";
 
@@ -16,6 +17,7 @@ export function HomeScreen() {
   const game = params.get("game") ?? undefined;
   const hasGameMode = [mode, uid, did, tid, game].some((value) => value !== undefined && value !== "");
   const cardsRef = useRef<GameCardsHandle>(null);
+  const account = useAccount();
 
   const cards = api.card.getByParams.useQuery(
     {
@@ -59,6 +61,12 @@ export function HomeScreen() {
         onPrevious={() => void cardsRef.current?.previous()}
         onNext={() => void cardsRef.current?.next()}
       />
+      <Link
+        to="/account"
+        className="inline-flex min-h-11 items-center justify-center font-sans text-sm font-semibold text-tappen-blue-200"
+      >
+        {account.signedIn ? "Account" : "Sign in"}
+      </Link>
     </main>
   );
 }

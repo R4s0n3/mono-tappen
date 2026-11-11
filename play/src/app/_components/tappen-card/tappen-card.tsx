@@ -58,7 +58,7 @@ const CardFooter = memo(function CardFooter(props: CardFooterProps) {
     },
     onError: (error) => {
       setModalContent(error.message);
-      if (getRuntime().accountActions) {
+      if (getRuntime().platform === "web" && getRuntime().accountActions) {
         window.open('/api/auth/signin', '_blank');
       }
     }

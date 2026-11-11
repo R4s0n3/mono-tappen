@@ -7,12 +7,14 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
-    "test": "node --experimental-strip-types --test src/endpoints.test.ts src/tailwind-config.test.ts src/play-dock.test.ts && node --test scripts/identity.test.mjs",
+    "test": "node --experimental-strip-types --test src/endpoints.test.ts src/tailwind-config.test.ts src/play-dock.test.ts src/apple-auth.test.ts && node --test scripts/identity.test.mjs",
     "identity:apply": "node scripts/apply-identity.mjs",
     "version:bump": "node scripts/bump-build.mjs",
     "cap:sync": "node scripts/apply-identity.mjs && npm run build && cap sync ios"
   },
   "dependencies": {
+    "@aparajita/capacitor-secure-storage": "^7.1.6",
+    "@capacitor-community/apple-sign-in": "^7.1.0",
     "@capacitor/core": "^7.4.3",
     "@capacitor/ios": "^7.4.3",
     "@fontsource/lilita-one": "^5.2.6",

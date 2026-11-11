@@ -131,6 +131,31 @@ model Session {
   @@index([userId])
 }
 
+/// Apple `sub` for the iOS app. The refresh token is what account deletion sends to Apple.
+model AppleSignIn {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sub          String   @unique
+  /// Often a privaterelay address, and often present only on the first login.
+  email        String?
+  refreshToken String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+/// Opaque native session. Only the SHA-256 of the token is stored.
+model BearerToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
 model Deck {
   id        String    @id @default(cuid())
   name      String?
@@ -212,6 +237,8 @@ model User {
   cards            Card[]
   decks            Deck[]
   sessions         Session[]
+  appleSignIn      AppleSignIn?
+  bearerTokens     BearerToken[]
   owned_skins      UserSkin[]
   payments         Payment[]
   liked_cards      Card[]        @relation("CardLikesToUser")
