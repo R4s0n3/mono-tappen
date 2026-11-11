@@ -7,7 +7,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        window?.backgroundColor = UIColor(red: 29.0 / 255.0, green: 31.0 / 255.0, blue: 47.0 / 255.0, alpha: 1)
+        window?.backgroundColor = tappenNavy
         return true
     }
 
@@ -26,7 +26,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
-        window?.backgroundColor = UIColor(red: 29.0 / 255.0, green: 31.0 / 255.0, blue: 47.0 / 255.0, alpha: 1)
+        window?.backgroundColor = tappenNavy
     }
 
     func applicationWillTerminate(_ application: UIApplication) {

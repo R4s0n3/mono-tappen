@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { IOS_DEPLOYMENT_TARGET, readIdentity } from "./apply-identity.mjs";
+import { IOS_DEPLOYMENT_TARGET, readIdentity, withDisplayName } from "./apply-identity.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -55,6 +55,22 @@ describe("app identity", () => {
     assert.doesNotMatch(plist, /NSAppTransportSecurity/);
     assert.doesNotMatch(plist, /UsageDescription/);
     assert.doesNotMatch(plist, /armv7/);
+    assert.match(plist, /<key>UIApplicationSceneManifest<\/key>/);
+    assert.match(plist, /<key>UISceneStoryboardFile<\/key>\s*<string>Main<\/string>/);
+    assert.match(plist, /<string>\$\(PRODUCT_MODULE_NAME\)\.SceneDelegate<\/string>/);
+    const kept = withDisplayName(plist, identity.displayName);
+    assert.match(kept, /<key>UIApplicationSceneManifest<\/key>/);
+    assert.match(kept, /<string>Tappen<\/string>/);
+  });
+
+  it("compiles the scene delegate that hosts the Capacitor bridge", () => {
+    const pbx = fs.readFileSync(path.join(root, "ios/App/App.xcodeproj/project.pbxproj"), "utf8");
+    assert.match(pbx, /SceneDelegate\.swift in Sources/);
+    const scene = fs.readFileSync(path.join(root, "ios/App/App/SceneDelegate.swift"), "utf8");
+    assert.match(scene, /UIStoryboard\(name: "Main"/);
+    assert.match(scene, /ApplicationDelegateProxy\.shared/);
+    assert.match(scene, /openURLContexts/);
+    assert.match(scene, /continue userActivity/);
   });
 
   it("ships the local bundle instead of a dev server", () => {
