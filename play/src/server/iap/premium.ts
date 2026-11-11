@@ -161,9 +161,12 @@ export function verifyAppleSignedTransaction(
   }
 }
 
-export function assertPremiumTransaction(transaction: ApplePremiumTransaction): void {
+export function assertPremiumTransaction(
+  transaction: ApplePremiumTransaction,
+  options: { allowRevoked?: boolean } = {},
+): void {
   if (transaction.bundleId !== PREMIUM_BUNDLE_ID) throw new PremiumPurchaseError("bundle");
   if (transaction.productId !== PREMIUM_PRODUCT_ID) throw new PremiumPurchaseError("product");
   if (transaction.type !== "Non-Consumable") throw new PremiumPurchaseError("type");
-  if (transaction.revocationDate != null) throw new PremiumPurchaseError("revoked");
+  if (!options.allowRevoked && transaction.revocationDate != null) throw new PremiumPurchaseError("revoked");
 }

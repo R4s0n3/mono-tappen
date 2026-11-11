@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 
 import { appStoreServerJwt, verifiedPremiumTransaction } from "./apple-api";
-import { planPremiumClaim, type PremiumAccountSnapshot } from "./claim-premium";
+import { planAppleRevocation, planPremiumClaim, type PremiumAccountSnapshot } from "./claim-premium";
 import {
   PREMIUM_BUNDLE_ID,
   PREMIUM_PRODUCT_ID,
@@ -161,9 +161,13 @@ describe("StoreKit signed transactions", () => {
     ).split(".").length, 3);
   });
 
-  it("does not call Apple when the signature, product, bundle, type, or revocation is wrong", async () => {
+  it("does not call Apple when the signature, product, bundle, or type is wrong", async () => {
     const roots = [chain.root];
-    const badSignature = signTransaction(payload()).replace(/.$/, (char) => (char === "a" ? "b" : "a"));
+    const parts = signTransaction(payload()).split(".");
+    const signature = Buffer.from(parts[2] ?? "", "base64url");
+    signature[0] = (signature[0] ?? 0) ^ 0xff;
+    parts[2] = signature.toString("base64url");
+    const badSignature = parts.join(".");
     assert.throws(() => verifyAppleSignedTransaction(badSignature, roots), (error: unknown) => {
       return error instanceof PremiumPurchaseError && error.message === "signature";
     });
@@ -172,7 +176,6 @@ describe("StoreKit signed transactions", () => {
       [{ productId: "app.tappen.ios.skin" }, "product"],
       [{ bundleId: "app.other" }, "bundle"],
       [{ type: "Auto-Renewable Subscription" }, "type"],
-      [{ revocationDate: 1_700_000_000_000 }, "revoked"],
     ];
     for (const [override, message] of cases) {
       let called = false;
@@ -190,6 +193,18 @@ describe("StoreKit signed transactions", () => {
       );
       assert.equal(called, false);
     }
+  });
+
+  it("returns a refund when Apple confirms the revocation", async () => {
+    const verified = await verifiedPremiumTransaction(signTransaction(payload({ revocationDate: 1_700_000_000_000 })), {
+      env: credentials,
+      roots: [chain.root],
+      fetchImpl: async () =>
+        Response.json({
+          signedTransactionInfo: signTransaction(payload({ revocationDate: 1_700_000_000_000 })),
+        }),
+    });
+    assert.equal(verified.revocationDate, 1_700_000_000_000);
   });
 
   it("rejects an API payload that does not match the device transaction", async () => {
@@ -276,6 +291,73 @@ describe("Premium claim", () => {
       }),
     });
     assert.equal(secondAppleId.outcome, "bound-to-other-account");
+  });
+
+  it("keeps the Apple purchase when a subscription already exists", () => {
+    const plan = planPremiumClaim({
+      userId: "user-1",
+      transaction: bought,
+      account: emptyAccount({
+        subscription: { status: "active", stripeId: "home-box:box-1", endsAt: null },
+      }),
+    });
+    assert.equal(plan.createPurchase?.originalTransactionId, bought.originalTransactionId);
+    assert.equal(plan.subscription?.action, "keep");
+  });
+
+  it("turns off an Apple-only grant after a refund and keeps a shop or box grant", () => {
+    const refunded = planAppleRevocation({
+      userId: "user-1",
+      originalTransactionId: bought.originalTransactionId,
+      purchase: { userId: "user-1", originalTransactionId: bought.originalTransactionId },
+      subscriptionStripeId: `appstore:${bought.originalTransactionId}`,
+      premiumSkinId: "skin-premium",
+      ownsPremiumSkin: true,
+      independentPremium: false,
+      skinKeptByAnotherGrant: false,
+    });
+    assert.equal(refunded.cancelSubscription, true);
+    assert.equal(refunded.removeSkinId, "skin-premium");
+    assert.equal(refunded.markRevoked, true);
+
+    const shopKept = planAppleRevocation({
+      userId: "user-1",
+      originalTransactionId: bought.originalTransactionId,
+      purchase: { userId: "user-1", originalTransactionId: bought.originalTransactionId },
+      subscriptionStripeId: "sub_shop_123",
+      premiumSkinId: "skin-premium",
+      ownsPremiumSkin: true,
+      independentPremium: true,
+      skinKeptByAnotherGrant: true,
+    });
+    assert.equal(shopKept.cancelSubscription, false);
+    assert.equal(shopKept.removeSkinId, null);
+
+    const shopRefundedFirst = planAppleRevocation({
+      userId: "user-1",
+      originalTransactionId: bought.originalTransactionId,
+      purchase: { userId: "user-1", originalTransactionId: bought.originalTransactionId },
+      subscriptionStripeId: "sub_shop_123",
+      premiumSkinId: "skin-premium",
+      ownsPremiumSkin: true,
+      independentPremium: false,
+      skinKeptByAnotherGrant: false,
+    });
+    assert.equal(shopRefundedFirst.cancelSubscription, true);
+    assert.equal(shopRefundedFirst.removeSkinId, "skin-premium");
+
+    const otherAccount = planAppleRevocation({
+      userId: "user-2",
+      originalTransactionId: bought.originalTransactionId,
+      purchase: { userId: "user-1", originalTransactionId: bought.originalTransactionId },
+      subscriptionStripeId: `appstore:${bought.originalTransactionId}`,
+      premiumSkinId: "skin-premium",
+      ownsPremiumSkin: true,
+      independentPremium: false,
+      skinKeptByAnotherGrant: false,
+    });
+    assert.equal(otherAccount.markRevoked, false);
+    assert.equal(otherAccount.cancelSubscription, false);
   });
 
   it("reactivates Premium without replacing the existing reference", () => {

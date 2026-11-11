@@ -80,7 +80,7 @@ export async function verifiedPremiumTransaction(
   const now = deps.now ?? new Date();
   const roots = deps.roots ?? appleRootCertificates();
   const clientTransaction = verifyAppleSignedTransaction(signedTransaction, roots, now);
-  assertPremiumTransaction(clientTransaction);
+  assertPremiumTransaction(clientTransaction, { allowRevoked: true });
   const fetchImpl = deps.fetchImpl ?? fetch;
   const token = appStoreServerJwt(credentials, now);
   const order: ApplePremiumTransaction["environment"][] =
@@ -110,9 +110,60 @@ export async function verifiedPremiumTransaction(
     ) {
       throw new PremiumPurchaseError("transaction");
     }
-    assertPremiumTransaction(apiTransaction);
+    assertPremiumTransaction(apiTransaction, { allowRevoked: true });
     return apiTransaction;
   }
   log(`App Store Server API has no transaction ${clientTransaction.transactionId}: ${lastStatus || "missing"}`);
+  throw new PremiumPurchaseError("not-found");
+}
+
+/**
+ * Read a stored transaction from the App Store Server API. A refund keeps the
+ * same id and adds revocationDate. The stored environment is tried first.
+ */
+export async function lookupPremiumTransaction(
+  transactionId: string,
+  environment: ApplePremiumTransaction["environment"],
+  deps: {
+    env?: NodeJS.ProcessEnv;
+    fetchImpl?: typeof fetch;
+    now?: Date;
+    roots?: X509Certificate[];
+    log?: (message: string) => void;
+  } = {},
+): Promise<ApplePremiumTransaction> {
+  const log = deps.log ?? ((message) => console.warn(message));
+  const credentials = appleIapCredentialsFromEnv(deps.env ?? process.env);
+  if (!credentials) throw new PremiumPurchaseError("config");
+  const now = deps.now ?? new Date();
+  const roots = deps.roots ?? appleRootCertificates();
+  const fetchImpl = deps.fetchImpl ?? fetch;
+  const token = appStoreServerJwt(credentials, now);
+  const order: ApplePremiumTransaction["environment"][] =
+    environment === "Sandbox" ? ["Sandbox", "Production"] : ["Production", "Sandbox"];
+  let lastStatus = 0;
+  for (const host of order) {
+    let result: { status: number; signedTransactionInfo: string | null };
+    try {
+      result = await signedTransactionFromApi(transactionId, host, token, fetchImpl);
+    } catch (error) {
+      log(`App Store Server API request failed: ${error instanceof Error ? error.message : "network"}`);
+      throw new PremiumPurchaseError("apple");
+    }
+    if (result.status === 404) {
+      lastStatus = 404;
+      continue;
+    }
+    if (!result.signedTransactionInfo) {
+      log(`App Store Server API request failed: ${result.status}`);
+      throw new PremiumPurchaseError("apple");
+    }
+    const apiTransaction = verifyAppleSignedTransaction(result.signedTransactionInfo, roots, now);
+    if (apiTransaction.environment !== host) throw new PremiumPurchaseError("environment");
+    if (apiTransaction.transactionId !== transactionId) throw new PremiumPurchaseError("transaction");
+    assertPremiumTransaction(apiTransaction, { allowRevoked: true });
+    return apiTransaction;
+  }
+  log(`App Store Server API has no transaction ${transactionId}: ${lastStatus || "missing"}`);
   throw new PremiumPurchaseError("not-found");
 }

@@ -8,6 +8,7 @@ CREATE TABLE "AppleIapPurchase" (
     "userId" TEXT NOT NULL,
     "productId" TEXT NOT NULL,
     "environment" TEXT NOT NULL,
+    "revokedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

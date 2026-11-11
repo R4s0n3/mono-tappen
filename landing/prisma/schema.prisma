@@ -165,6 +165,7 @@ model AppleIapPurchase {
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   productId             String
   environment           String
+  revokedAt             DateTime?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }

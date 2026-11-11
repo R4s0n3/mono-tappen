@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 
 import { api } from "../platform/api";
+import { premiumAppAccountToken } from "../platform/auth";
 import {
   currentPremiumEntitlements,
+  finishPremiumTransaction,
   loadPremiumProduct,
   premiumPurchaseAvailable,
   purchasePremium,
@@ -10,10 +12,13 @@ import {
 
 export function PremiumPanel() {
   const entitlement = api.account.entitlement.useQuery();
+  const me = api.account.me.useQuery();
   const utils = api.useUtils();
   const purchase = api.account.purchasePremium.useMutation();
   const restore = api.account.restorePremium.useMutation();
+  const reconcile = api.account.reconcilePremium.useMutation();
   const [price, setPrice] = useState<string | null>(null);
+  const [priceAttempt, setPriceAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const onPhone = premiumPurchaseAvailable();
@@ -24,17 +29,21 @@ export function PremiumPanel() {
     let cancelled = false;
     void loadPremiumProduct()
       .then((product) => {
-        if (!cancelled) setPrice(product.displayPrice);
+        if (!cancelled) {
+          setPrice(product.displayPrice);
+          setError(null);
+        }
       })
       .catch((caught: unknown) => {
         if (!cancelled) {
+          setPrice(null);
           setError(caught instanceof Error ? caught.message : "Premium is not available from the App Store.");
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [onPhone, premium]);
+  }, [onPhone, premium, priceAttempt]);
 
   if (premium) {
     return <p className="font-sans text-base text-tappen-blue-100">Tappen Premium is on this account.</p>;
@@ -46,13 +55,23 @@ export function PremiumPanel() {
     );
   }
 
+  async function finishClaimed(transactionIds: string[]): Promise<void> {
+    for (const transactionId of transactionIds) {
+      await finishPremiumTransaction(transactionId);
+    }
+  }
+
   async function buy(): Promise<void> {
+    if (!me.data?.id) return;
     setBusy(true);
     setError(null);
     try {
-      const result = await purchasePremium();
+      const appAccountToken = await premiumAppAccountToken(me.data.id);
+      const result = await purchasePremium(appAccountToken);
       if (result.cancelled || !result.signedTransaction) return;
-      await purchase.mutateAsync({ signedTransaction: result.signedTransaction });
+      const claimed = await purchase.mutateAsync({ signedTransaction: result.signedTransaction });
+      await finishClaimed(claimed.transactionIds);
+      if (claimed.outcome === "revoked") setError("This purchase was refunded.");
       await utils.account.entitlement.invalidate();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not complete the purchase.");
@@ -65,12 +84,16 @@ export function PremiumPanel() {
     setBusy(true);
     setError(null);
     try {
-      const signedTransactions = await currentPremiumEntitlements();
+      const signedTransactions = await currentPremiumEntitlements(true);
       if (signedTransactions.length === 0) {
-        setError("No Premium purchase was found for this Apple ID.");
+        const refreshed = await reconcile.mutateAsync();
+        if (refreshed.outcome !== "revoked") setError("No Premium purchase was found for this Apple ID.");
+        await utils.account.entitlement.invalidate();
         return;
       }
-      await restore.mutateAsync({ signedTransactions: signedTransactions.slice(0, 8) });
+      const claimed = await restore.mutateAsync({ signedTransactions: signedTransactions.slice(0, 8) });
+      await finishClaimed(claimed.transactionIds);
+      if (claimed.outcome === "revoked") setError("This purchase was refunded.");
       await utils.account.entitlement.invalidate();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not restore purchases.");
@@ -93,6 +116,16 @@ export function PremiumPanel() {
       >
         {price ? `Get Premium · ${price}` : "Get Premium"}
       </button>
+      {!price && error ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => setPriceAttempt((attempt) => attempt + 1)}
+          className="inline-flex min-h-11 items-center justify-center font-sans text-sm font-semibold text-tappen-blue-200"
+        >
+          Try again
+        </button>
+      ) : null}
       <button
         type="button"
         disabled={busy}

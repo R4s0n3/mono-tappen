@@ -1,4 +1,4 @@
-import { Capacitor, registerPlugin } from "@capacitor/core";
+import { Capacitor, registerPlugin, type PluginListenerHandle } from "@capacitor/core";
 
 /**
  * The only in-app purchase. StoreKit 2 non-consumable, checked by play with
@@ -21,10 +21,20 @@ export type PremiumPurchaseResult =
   | { cancelled: true; signedTransaction?: undefined }
   | { cancelled: false; signedTransaction: string };
 
+export type PremiumTransactionEvent = {
+  signedTransaction: string;
+  appAccountToken?: string;
+};
+
 interface StoreKitPremiumPlugin {
   getProduct(): Promise<PremiumStoreProduct>;
-  purchase(): Promise<PremiumPurchaseResult>;
-  currentEntitlements(): Promise<{ signedTransactions: string[] }>;
+  purchase(options: { appAccountToken: string }): Promise<PremiumPurchaseResult>;
+  currentEntitlements(options: { sync: boolean }): Promise<{ signedTransactions: string[] }>;
+  finish(options: { transactionId: string }): Promise<void>;
+  addListener(
+    eventName: "transaction",
+    listenerFunc: (event: PremiumTransactionEvent) => void,
+  ): Promise<PluginListenerHandle>;
 }
 
 const StoreKitPremium = registerPlugin<StoreKitPremiumPlugin>("StoreKitPremium");
@@ -44,13 +54,27 @@ export async function loadPremiumProduct(): Promise<PremiumStoreProduct> {
   return product;
 }
 
-export async function purchasePremium(): Promise<PremiumPurchaseResult> {
+export async function purchasePremium(appAccountToken: string): Promise<PremiumPurchaseResult> {
   if (!onIphone()) throw new Error("Premium purchase runs on the iPhone app.");
-  return StoreKitPremium.purchase();
+  return StoreKitPremium.purchase({ appAccountToken });
 }
 
-export async function currentPremiumEntitlements(): Promise<string[]> {
+/** sync asks the App Store to refresh. Only the Restore button sets it. */
+export async function currentPremiumEntitlements(sync: boolean): Promise<string[]> {
   if (!onIphone()) throw new Error("Premium purchase runs on the iPhone app.");
-  const current = await StoreKitPremium.currentEntitlements();
+  const current = await StoreKitPremium.currentEntitlements({ sync });
   return current.signedTransactions;
+}
+
+export async function finishPremiumTransaction(transactionId: string): Promise<void> {
+  if (!onIphone() || transactionId === "") return;
+  await StoreKitPremium.finish({ transactionId });
+}
+
+export async function listenForPremiumTransactions(
+  onTransaction: (event: PremiumTransactionEvent) => void,
+): Promise<{ remove: () => Promise<void> }> {
+  if (!onIphone()) return { remove: () => Promise.resolve() };
+  const handle = await StoreKitPremium.addListener("transaction", onTransaction);
+  return { remove: () => handle.remove() };
 }

@@ -29,6 +29,11 @@ describe("native Premium purchase", () => {
     assert.match(swift, /Product\.products/);
     assert.match(swift, /app\.tappen\.ios\.premium/);
     assert.match(swift, /jwsRepresentation/);
+    assert.match(swift, /Transaction\.updates/);
+    assert.match(swift, /AppStore\.sync/);
+    assert.match(swift, /appAccountToken/);
+    assert.equal(swift.match(/transaction\.finish\(\)/g)?.length, 1);
+    assert.match(premium, /Try again/);
   });
 
   it("does not link to the web shop or sell skins", () => {
