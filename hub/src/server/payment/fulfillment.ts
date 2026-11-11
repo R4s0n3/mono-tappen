@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import type Stripe from "stripe";
 
-import { keepSkinAfterRefund, keepSubscriptionAfterRefund } from "@/server/home/retention";
+import { activeApplePremiumGrant, keepSkinAfterRefund, keepSubscriptionAfterRefund } from "@/server/home/retention";
 import { db } from "@/server/db";
 import {
   checkoutAmountMatches,
@@ -151,6 +151,35 @@ async function readBoxRetention(tx: Tx, userId: string): Promise<BoxRetention> {
   };
 }
 
+async function readAppleRetention(tx: Tx, userId: string): Promise<BoxRetention> {
+  try {
+    const purchase = await tx.appleIapPurchase.findUnique({
+      where: { userId },
+      select: { productId: true, revokedAt: true },
+    });
+    if (!activeApplePremiumGrant(purchase)) return noBoxRetention;
+    const product = await tx.product.findFirst({
+      where: premiumSubscriptionWhere,
+      orderBy: premiumSubscriptionOrder,
+      include: { skins: { select: { id: true } } },
+    });
+    return {
+      premium: true,
+      skinIds: new Set(
+        product
+          ? skinsGrantedByPurchase(
+              "SUBSCRIPTION",
+              product.skins.map((skin) => skin.id),
+            )
+          : [],
+      ),
+    };
+  } catch (error) {
+    if (isMissingTable(error)) return noBoxRetention;
+    throw error;
+  }
+}
+
 async function grantsFromOtherPayments(userId: string, exceptPaymentId: string): Promise<OtherGrants> {
   const others = await db.payment.findMany({
     where: {
@@ -187,6 +216,7 @@ async function revokePurchase(
   product: ResolvedProduct,
   otherGrants: OtherGrants,
   box: BoxRetention,
+  apple: BoxRetention,
 ): Promise<void> {
   if (product.type === "SUBSCRIPTION" && !otherGrants.subscription) {
     const anotherPremium = await tx.payment.findFirst({
@@ -202,6 +232,7 @@ async function revokePurchase(
       !keepSubscriptionAfterRefund({
         anotherCompletedPremiumPayment: Boolean(anotherPremium),
         redeemedHomeBox: box.premium,
+        activeAppleGrant: apple.premium,
       })
     ) {
       await tx.subscription.updateMany({
@@ -219,6 +250,7 @@ async function revokePurchase(
       keepSkinAfterRefund({
         grantedByAnotherPayment: otherGrants.skinIds.has(skinId),
         grantedByHomeBox: box.skinIds.has(skinId),
+        grantedByApple: apple.skinIds.has(skinId),
       })
     ) {
       continue;
@@ -413,7 +445,8 @@ async function markPaymentRefunded(paymentId: string): Promise<void> {
     // A redeemed Home box is a separate permanent grant and must survive this refund.
     if (product) {
       const box = boxTableReady ? await readBoxRetention(tx, current.userId) : noBoxRetention;
-      await revokePurchase(tx, current.userId, current.id, product, otherGrants, box);
+      const apple = await readAppleRetention(tx, current.userId);
+      await revokePurchase(tx, current.userId, current.id, product, otherGrants, box, apple);
     } else if (current.status === "COMPLETED") {
       throw new Error(`Cannot revoke payment ${payment.id} because its product is unknown`);
     }

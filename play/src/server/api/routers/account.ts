@@ -4,9 +4,30 @@ import { revokeAppleRefreshToken } from "@/server/auth/apple-client";
 import { AppleTokenError } from "@/server/auth/apple-token";
 import { deleteNativeAccount } from "@/server/auth/delete-account";
 import { eraseUserAccount, loadAppleJwks, signInWithAppleIdentity } from "@/server/auth/native-session";
+import { confirmSignedPremium, reconcileStoredApplePremium, restoreSignedPremium } from "@/server/iap/claim-premium";
+import { PremiumPurchaseError } from "@/server/iap/premium";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/api/trpc";
 import { loadEntitlement } from "@/server/home/entitlement-db";
 import { TRPCError } from "@trpc/server";
+
+function premiumError(error: unknown): never {
+  if (error instanceof PremiumPurchaseError) {
+    if (error.message === "config") {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "Premium verification is not configured.",
+      });
+    }
+    if (error.message === "bound") {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "This purchase is already on another account.",
+      });
+    }
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Could not verify this purchase." });
+  }
+  throw error;
+}
 
 export const accountRouter = createTRPCRouter({
   entitlement: protectedProcedure.query(({ ctx }) => {
@@ -44,6 +65,49 @@ export const accountRouter = createTRPCRouter({
         throw error;
       }
     }),
+
+  /**
+   * Confirm a StoreKit 2 non-consumable with the App Store Server API and
+   * turn on the same Premium flag the website and box codes use.
+   */
+  purchasePremium: protectedProcedure
+    .input(z.object({ signedTransaction: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const confirmed = await confirmSignedPremium(ctx.db, ctx.session.user.id, input.signedTransaction);
+        return {
+          premium: confirmed.outcome !== "revoked",
+          outcome: confirmed.outcome,
+          transactionIds: confirmed.transactionIds,
+        };
+      } catch (error) {
+        premiumError(error);
+      }
+    }),
+
+  restorePremium: protectedProcedure
+    .input(z.object({ signedTransactions: z.array(z.string().min(1)).min(1).max(8) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const restored = await restoreSignedPremium(ctx.db, ctx.session.user.id, input.signedTransactions);
+        return {
+          premium: restored.outcome !== "revoked",
+          outcome: restored.outcome,
+          transactionIds: restored.transactionIds,
+        };
+      } catch (error) {
+        premiumError(error);
+      }
+    }),
+
+  /**
+   * Ask Apple whether the stored purchase was refunded. A network failure
+   * leaves the current grant in place.
+   */
+  reconcilePremium: protectedProcedure.mutation(async ({ ctx }) => {
+    const outcome = await reconcileStoredApplePremium(ctx.db, ctx.session.user.id);
+    return { outcome };
+  }),
 
   me: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.db.user.findUnique({

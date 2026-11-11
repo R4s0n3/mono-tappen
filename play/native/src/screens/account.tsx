@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { api } from "../platform/api";
 import { useAccount } from "../account-session";
 import { SignInWithAppleButton } from "./apple-button";
+import { PremiumPanel } from "./premium";
 
 const shell =
   "flex min-h-dvh flex-col items-center gap-6 bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 px-5 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-[max(1rem,env(safe-area-inset-top))] text-center text-tappen-blue-100";
@@ -20,6 +21,7 @@ export function AccountScreen() {
       {account.signedIn ? (
         <div className="flex w-full max-w-sm flex-col gap-3">
           <p className="text-lg text-tappen-blue-200">{label}</p>
+          <PremiumPanel />
           <button
             type="button"
             disabled={account.busy}
@@ -64,7 +66,7 @@ export function AccountScreen() {
       ) : (
         <div className="flex w-full max-w-sm flex-col gap-4">
           <p className="font-sans text-base leading-6 text-tappen-blue-200">
-            Sign in with Apple is the only way to keep a night on this iPhone.
+            Sign in with Apple is the only way to keep a night on this iPhone. Sign in to buy Tappen Premium on this iPhone.
           </p>
           <SignInWithAppleButton disabled={account.busy || !account.ready} onClick={() => void account.signIn()} />
         </div>

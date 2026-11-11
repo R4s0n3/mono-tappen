@@ -9,7 +9,7 @@
  * `screens.tsx` and call tRPC from here, not with a one-off fetch:
  * - decks (list, create): Premium's extra-deck gate already lives on hub
  * - profile: entitlement, name, account deletion
- * - skins: catalog and ownership, bought through `purchase` (StoreKit 2)
+ * - skins: not sold in the app. Premium is the only in-app purchase.
  *
  * Those procedures live on hub today. Both apps share one Postgres, so they
  * can move onto play or this file can grow a second client pointed at hub.
@@ -18,4 +18,4 @@
 export { api } from "@/trpc/react";
 
 export { getAccessToken } from "./auth";
-export { purchase, purchaseConfig, storeKitProducts } from "./purchases";
+export { loadPremiumProduct, purchasePremium, storeKitProducts } from "./purchases";

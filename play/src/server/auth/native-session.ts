@@ -1,5 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 
+import { lockAccountRow } from "@/server/iap/claim-premium";
+
 import { displayName, normalizeEmail, planAppleSignIn } from "./apple-account";
 import { exchangeAppleAuthorizationCode } from "./apple-client";
 import { type AppleJwk, verifyAppleIdentityToken } from "./apple-token";
@@ -202,10 +204,12 @@ export async function eraseUserAccount(db: PrismaClient, userId: string, now: Da
   const plan = erasurePlan({ email: user?.email ?? null }, orders, now);
 
   await db.$transaction(async (tx) => {
+    await lockAccountRow(tx, userId);
     await tx.bearerToken.deleteMany({ where: { userId } });
     await tx.session.deleteMany({ where: { userId } });
     await tx.account.deleteMany({ where: { userId } });
     await tx.appleSignIn.deleteMany({ where: { userId } });
+    await tx.appleIapPurchase.deleteMany({ where: { userId } });
     await tx.userSkin.deleteMany({ where: { userId } });
     await tx.deck.updateMany({
       where: { creatorId: userId },

@@ -19,6 +19,7 @@ export async function loadEntitlement(
     }),
     db.product.findFirst({
       where: { name: { equals: "Premium", mode: "insensitive" }, type: "SUBSCRIPTION" },
+      orderBy: { id: "asc" },
       include: { skins: { select: { id: true } } },
     }),
     db.userSkin.findMany({

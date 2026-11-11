@@ -3,6 +3,7 @@ import { Capacitor } from "@capacitor/core";
 import { SecureStorage } from "@aparajita/capacitor-secure-storage";
 
 const TOKEN_KEY = "bearer";
+const PREMIUM_ACCOUNT_KEY = "premium-account";
 const BUNDLE_ID = "app.tappen.ios";
 
 let memoryToken: string | null = null;
@@ -42,6 +43,35 @@ export async function saveAccessToken(token: string): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
   await prepareKeychain();
   await SecureStorage.set(TOKEN_KEY, token);
+}
+
+/**
+ * Stable StoreKit account token for this Tappen user. A later approval is
+ * claimed only when the signed-in user still owns this token.
+ */
+export async function premiumAppAccountToken(userId: string): Promise<string> {
+  if (!Capacitor.isNativePlatform()) return crypto.randomUUID();
+  await prepareKeychain();
+  let tokens: Record<string, string> = {};
+  try {
+    const stored = await SecureStorage.get(PREMIUM_ACCOUNT_KEY);
+    if (typeof stored === "string" && stored !== "") {
+      const parsed = JSON.parse(stored) as unknown;
+      if (parsed && typeof parsed === "object") {
+        for (const [key, value] of Object.entries(parsed)) {
+          if (typeof value === "string") tokens[key] = value;
+        }
+      }
+    }
+  } catch {
+    tokens = {};
+  }
+  const existing = tokens[userId];
+  if (existing) return existing;
+  const created = crypto.randomUUID();
+  tokens[userId] = created;
+  await SecureStorage.set(PREMIUM_ACCOUNT_KEY, JSON.stringify(tokens));
+  return created;
 }
 
 export async function clearAccessToken(): Promise<void> {
