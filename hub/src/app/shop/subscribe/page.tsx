@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { getServerAuthSession } from "@/server/auth";
+import { db } from "@/server/db";
 import { DashNavigation } from "@/app/_components/dash-navigation";
 
 import { CheckIcon, XMarkIcon } from "@heroicons/react/24/solid";
@@ -10,6 +11,14 @@ import PayNow from "../_components/pay-now";
 export default async function SupscribePage() {
 
   const session = await getServerAuthSession();
+  const premiumProduct = session
+    ? await db.product.findFirst({
+        where: { name: { equals: "Premium", mode: "insensitive" }, type: "SUBSCRIPTION" },
+        select: { price: true },
+      })
+    : null;
+  // Checkout charges Product.price. 699 cents is Premium when that row is missing.
+  const premiumPrice = premiumProduct && premiumProduct.price > 0 ? premiumProduct.price : 699;
 
   
   type SubInfoItem = {
@@ -49,7 +58,7 @@ const BASE = {
 const PREMIUM = {
     title: "premium",
     features: premium_features,
-    price: 799
+    price: premiumPrice
 }
 
 const SUBS_INFO:SubInfo[] = [ BASE, PREMIUM ]
