@@ -1,9 +1,10 @@
 import { useLocation, useNavigate, useSearchParams as useRouterSearchParams } from "react-router-dom";
 
 /**
- * The play screens call Next's router. Query-only pushes (the rules-card swipe)
- * do a full navigation so the reload that follows cannot race the history update.
- * `refresh` is a no-op: this shell has no server components to re-fetch.
+ * The play screens call Next's router. A query-only push replaces the search
+ * string and keeps the hash. Home reads that search from the router, so a
+ * reload is not required. `refresh` is a no-op: this shell has no server
+ * components to re-fetch.
  */
 export function useRouter() {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ export function useRouter() {
   return {
     push(href: string) {
       if (href.startsWith("?")) {
-        window.location.assign(`${location.pathname}${href}`);
+        navigate({ pathname: location.pathname, search: href, hash: location.hash });
         return;
       }
       navigate(href);
