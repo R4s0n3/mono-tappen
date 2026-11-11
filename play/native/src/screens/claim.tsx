@@ -7,9 +7,9 @@ import { Link } from "react-router-dom";
 export function ClaimScreen() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 px-8 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(3rem,env(safe-area-inset-top))] text-center text-tappen-blue-100">
-      <h1 className="font-lilita-one text-4xl text-tappen-blue-50">Your night</h1>
+      <h1 className="font-lilita-one text-4xl text-tappen-blue-50">Coming soon</h1>
       <p className="max-w-xs text-lg text-tappen-blue-200">
-        Sign in with Apple will keep this night on your account. That is the only sign-in this app will offer, and it is not in this build yet.
+        Saving a night to an account needs Sign in with Apple. That is not in this build, so there is nothing to sign in to yet.
       </p>
       <Link
         to="/"

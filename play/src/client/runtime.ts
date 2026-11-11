@@ -19,6 +19,11 @@ export type TappenRuntime = {
   wsUrl?: string;
   /** Website shows the flame. The iOS shell turns it off. */
   showNsfwBadge: boolean;
+  /**
+   * Star, report, and "claim this night" need an account. The website keeps
+   * them. The iOS shell hides them until Sign in with Apple exists.
+   */
+  accountActions: boolean;
   /** M2. Unset on the website, which keeps using the NextAuth cookie. */
   getAccessToken?: () => Promise<string | null> | string | null;
 };
@@ -30,6 +35,7 @@ type RuntimeGlobal = typeof globalThis & {
 const defaults: TappenRuntime = {
   platform: "web",
   showNsfwBadge: true,
+  accountActions: true,
 };
 
 export function getRuntime(): TappenRuntime {

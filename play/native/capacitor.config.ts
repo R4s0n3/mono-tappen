@@ -1,12 +1,12 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 /**
- * Bundle id is a suggestion. The owner sets the real id in Xcode and
- * App Store Connect before the first upload. Do not set `server.url`:
- * the app ships this bundle, it does not wrap play.tappen.app.
+ * Name and bundle id are copied from app.identity.json by
+ * `npm run identity:apply`. Change them there. app.tappen.ios is the
+ * owner's choice for the first App Store record.
  *
- * Sign in with Apple (M2) and StoreKit 2 (M3) are native capabilities
- * added on the Mac. Product ids live in src/platform/purchases.ts.
+ * Do not set `server.url`. The app ships this bundle. It does not load a
+ * dev server, and it does not wrap play.tappen.app in a web view.
  */
 const config: CapacitorConfig = {
   appId: "app.tappen.ios",

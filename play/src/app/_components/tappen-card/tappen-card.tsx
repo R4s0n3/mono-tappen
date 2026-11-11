@@ -49,6 +49,7 @@ const CardFooter = memo(function CardFooter(props: CardFooterProps) {
   const { authorTag, liked, nsfw, card } = props
   const [modalContent, setModalContent] = useState<string | null>(null)
   const [isLiked, setIsLiked] = useState(liked)
+  const accountActions = getRuntime().accountActions
   const { mutateAsync: toggleStarred, isPending: isLiking } = api.card.toggleStarred.useMutation({
     onSuccess: (result) => {
       setModalContent(result);
@@ -57,7 +58,9 @@ const CardFooter = memo(function CardFooter(props: CardFooterProps) {
     },
     onError: (error) => {
       setModalContent(error.message);
-      window.open('/api/auth/signin', '_blank');
+      if (getRuntime().accountActions) {
+        window.open('/api/auth/signin', '_blank');
+      }
     }
   })
 
@@ -85,12 +88,12 @@ const CardFooter = memo(function CardFooter(props: CardFooterProps) {
     {
       svg: StarIcon,
       name: "starred",
-      display: isLiked
+      display: accountActions && isLiked
     },
     {
       svg: StarIconOutline,
       name: "not-starred",
-      display: !isLiked
+      display: accountActions && !isLiked
     },
     {
       svg: FireIcon,
@@ -100,7 +103,7 @@ const CardFooter = memo(function CardFooter(props: CardFooterProps) {
     {
       svg: FlagIcon,
       name: "flag",
-      display: true
+      display: accountActions
     },
   ];
 
