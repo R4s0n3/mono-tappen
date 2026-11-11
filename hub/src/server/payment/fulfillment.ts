@@ -11,6 +11,7 @@ import {
   skinsGrantedByPurchase,
   type PurchaseType,
 } from "@/server/payment/payment-state";
+import { premiumSubscriptionOrder, premiumSubscriptionWhere } from "@/server/payment/premium-product";
 import { stripe } from "@/server/payment/stripe";
 
 type Tx = Prisma.TransactionClient;
@@ -133,7 +134,8 @@ async function readBoxRetention(tx: Tx, userId: string): Promise<BoxRetention> {
   });
   if (!redeemed) return noBoxRetention;
   const product = await tx.product.findFirst({
-    where: { name: { equals: "Premium", mode: "insensitive" }, type: "SUBSCRIPTION" },
+    where: premiumSubscriptionWhere,
+    orderBy: premiumSubscriptionOrder,
     include: { skins: { select: { id: true } } },
   });
   return {

@@ -5,6 +5,7 @@ import {
   premiumSkinIdFromProduct,
   type EntitlementView,
 } from "@/server/home/entitlement";
+import { premiumSubscriptionOrder, premiumSubscriptionWhere } from "@/server/payment/premium-product";
 
 type EntitlementReader = Pick<PrismaClient, "subscription" | "product" | "userSkin">;
 
@@ -18,7 +19,8 @@ export async function loadEntitlement(
       select: { status: true },
     }),
     db.product.findFirst({
-      where: { name: { equals: "Premium", mode: "insensitive" }, type: "SUBSCRIPTION" },
+      where: premiumSubscriptionWhere,
+      orderBy: premiumSubscriptionOrder,
       include: { skins: { select: { id: true } } },
     }),
     db.userSkin.findMany({

@@ -12,7 +12,7 @@
     "dev": "next dev",
     "postinstall": "prisma generate",
     "lint": "next lint",
-    "test": "node --import tsx --test src/server/home/retention.test.ts src/server/payment/payment-state.test.ts",
+    "test": "node --import tsx --test src/server/home/retention.test.ts src/server/payment/payment-state.test.ts src/server/payment/premium-product.test.ts",
     "start": "next start"
   },
   "dependencies": {
