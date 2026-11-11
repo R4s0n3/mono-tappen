@@ -2,7 +2,7 @@
 
 Dieser Build ist für interne Tester. Du archivierst ihn auf dem Mac und lädst ihn mit Xcode hoch. Anmeldung gibt es nur mit Sign in with Apple. Unter Account kannst du dich anmelden, abmelden und das Konto löschen. Solo-Spiel, Discover und Räume funktionieren auch ohne Account.
 
-Die App ist in v1 nur fürs iPhone, nur Hochformat. iPad ist absichtlich nicht dabei. Mindestversion ist iOS 15. Xcode 27 baut ein Target 14.0 nicht mehr. Apps, die mit dem iOS-27-SDK gebaut werden, brauchen den UIScene-Lifecycle, sonst stürzt der Start auf dem Gerät ab. Der ist in `Info.plist` und `SceneDelegate.swift`. Build 4 ist Sign in with Apple. Dafür muss die Capability in Apple Developer für `app.tappen.ios` an sein. Der Schlüssel (.p8) gehört auf den Server, nicht ins Repo.
+Die App ist in v1 nur fürs iPhone, nur Hochformat. iPad ist absichtlich nicht dabei. Mindestversion ist iOS 15. Xcode 27 baut ein Target 14.0 nicht mehr. Apps, die mit dem iOS-27-SDK gebaut werden, brauchen den UIScene-Lifecycle, sonst stürzt der Start auf dem Gerät ab. Der ist in `Info.plist` und `SceneDelegate.swift`. Build 5 ist Tappen Premium als einmaliger App-Store-Kauf (`app.tappen.ios.premium`). Der Preis kommt von StoreKit. In der App gibt es keinen Link zum Web-Shop. Das Produkt und den In-App-Purchase-Schlüssel legst du in App Store Connect an. Der Schlüssel gehört auf den Server (`APPLE_IAP_ISSUER_ID`, `APPLE_IAP_KEY_ID`, `APPLE_IAP_PRIVATE_KEY`), nicht ins Repo.
 
 ## Eine Datei für Name und Bundle-ID
 
@@ -13,7 +13,7 @@ Alles, was sich ändern darf, steht in `app.identity.json`:
 | Anzeigename | Tappen |
 | Bundle-ID | `app.tappen.ios` |
 | Version | 0.1.0 (`MARKETING_VERSION`) |
-| Build | 4 (`CURRENT_PROJECT_VERSION`) |
+| Build | 5 (`CURRENT_PROJECT_VERSION`) |
 | Geräte | `1` = nur iPhone |
 
 Die Bundle-ID `app.tappen.ios` ist eine Entscheidung von dir. Wenn sie anders heißen soll, änderst du nur diese Datei und führst danach aus:

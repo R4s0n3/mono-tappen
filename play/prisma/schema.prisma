@@ -156,6 +156,19 @@ model BearerToken {
   @@index([userId])
 }
 
+/// One App Store non-consumable bound to one Tappen account.
+model AppleIapPurchase {
+  id                    String   @id @default(cuid())
+  originalTransactionId String   @unique
+  transactionId         String
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId             String
+  environment           String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
 model Deck {
   id        String    @id @default(cuid())
   name      String?
@@ -238,6 +251,7 @@ model User {
   decks            Deck[]
   sessions         Session[]
   appleSignIn      AppleSignIn?
+  appleIapPurchase AppleIapPurchase?
   bearerTokens     BearerToken[]
   owned_skins      UserSkin[]
   payments         Payment[]
