@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getRuntime } from "@/client/runtime";
 import { api } from "@/trpc/react";
 import type { CardSocket, RoomState, Seat } from "./types";
 import { forgetSeat } from "./seat";
@@ -149,8 +150,9 @@ export function StageView({
       <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 p-8 text-center text-tappen-blue-100">
         <h1 className="font-lilita-one text-5xl text-tappen-sunset-400">That&apos;s a wrap</h1>
         <p className="max-w-md text-lg text-tappen-blue-300">
-          Every guest who wants their name on tonight&apos;s game should open the app
-          once more and claim their seat.
+          {getRuntime().accountActions
+            ? "Every guest who wants their name on tonight's game should open the app once more and claim their seat."
+            : "Good night. Saving a night to an account is coming soon."}
         </p>
         <PlayerList state={state} seat={seat} />
         <button

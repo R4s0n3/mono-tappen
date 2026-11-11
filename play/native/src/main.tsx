@@ -6,17 +6,24 @@ import { configureRuntime } from "@/client/runtime";
 import { TRPCReactProvider } from "@/trpc/react";
 
 import { App } from "./App";
+import { resolveNativeEndpoints } from "./endpoints";
 import { getAccessToken } from "./platform/auth";
 import "./styles.css";
 
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "https://play.tappen.app").replace(/\/$/, "");
-const wsUrl = import.meta.env.VITE_WS_URL || "wss://play.tappen.app/ws";
+const endpoints = import.meta.env.PROD
+  ? resolveNativeEndpoints({ prod: true })
+  : resolveNativeEndpoints({
+      prod: false,
+      apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
+      wsUrl: import.meta.env.VITE_WS_URL,
+    });
 
 configureRuntime({
   platform: "ios",
-  apiBaseUrl,
-  wsUrl,
+  apiBaseUrl: endpoints.apiBaseUrl,
+  wsUrl: endpoints.wsUrl,
   showNsfwBadge: false,
+  accountActions: false,
   getAccessToken,
 });
 

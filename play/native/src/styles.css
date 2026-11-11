@@ -11,6 +11,7 @@
   --font-sans: "Titillium Web", sans-serif;
   --font-serif: "Playfair Display", serif;
   --font-lilita-one: "Lilita One", system-ui, sans-serif;
+  color-scheme: dark;
 }
 
 .fontStyle_dark {

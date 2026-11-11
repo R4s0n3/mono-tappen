@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { getRuntime } from "@/client/runtime";
 import type { CardSocket, RoomState, Seat } from "./types";
 import { LiveCard, useDealIntro } from "./live-card";
 
@@ -55,15 +56,20 @@ export function ControllerView({
       <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 p-8 text-center text-tappen-blue-100">
         <h1 className="font-lilita-one text-5xl text-tappen-sunset-400">That&apos;s a wrap</h1>
         <p className="max-w-xs text-lg text-tappen-blue-300">
-          Good night, {seat.displayName}. Want this night to follow you around?
+          Good night, {seat.displayName}.
+          {getRuntime().accountActions ? " Want this night to follow you around?" : ""}
         </p>
-        <button
-          type="button"
-          onClick={() => router.push(claimUrl)}
-          className="font-lilita-one rounded-full bg-tappen-sunset-500 px-8 py-4 text-xl text-tappen-blue-900 transition hover:bg-tappen-sunset-400"
-        >
-          That was me — claim it
-        </button>
+        {getRuntime().accountActions ? (
+          <button
+            type="button"
+            onClick={() => router.push(claimUrl)}
+            className="font-lilita-one rounded-full bg-tappen-sunset-500 px-8 py-4 text-xl text-tappen-blue-900 transition hover:bg-tappen-sunset-400"
+          >
+            That was me — claim it
+          </button>
+        ) : (
+          <p className="max-w-xs text-tappen-blue-300">Saving this night to an account is coming soon.</p>
+        )}
       </div>
     );
   }
