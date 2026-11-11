@@ -148,6 +148,7 @@ export const cardRouter = createTRPCRouter({
       const cards = await db.card.findMany({
         where: {
           visible: "PUBLIC",
+          nsfw: false,
           health: { gte: 500000 }
         },
         take: 100, // Get more cards than needed

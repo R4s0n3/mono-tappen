@@ -1,5 +1,7 @@
 'use client'
 import { memo, useEffect, useState, useCallback } from "react"
+import { cardShareUrl } from "@/client/links"
+import { getRuntime } from "@/client/runtime"
 import { api } from "@/trpc/react"
 import CardSkin, { type CardSkinItem } from "./_elements/card-skin"
 import { StarIcon, FireIcon, XMarkIcon } from "@heroicons/react/24/solid"
@@ -73,11 +75,12 @@ const CardFooter = memo(function CardFooter(props: CardFooterProps) {
   })
 
   // Compute icons once based on component state
+  const shareUrl = cardShareUrl(card)
   const icons: FooterIcon[] = [
     {
       svg: ShareIcon,
       name: "share",
-      display: true
+      display: shareUrl !== null
     },
     {
       svg: StarIcon,
@@ -92,7 +95,7 @@ const CardFooter = memo(function CardFooter(props: CardFooterProps) {
     {
       svg: FireIcon,
       name: "nsfw",
-      display: nsfw
+      display: nsfw && getRuntime().showNsfwBadge
     },
     {
       svg: FlagIcon,
@@ -108,10 +111,11 @@ const CardFooter = memo(function CardFooter(props: CardFooterProps) {
     const pressedId = event.currentTarget.id
 
     if (pressedId === "share") {
+      if (!shareUrl) return
       const shareData = {
         title: 'Check out this Tappen card',
         text: 'I found this interesting card on Tappen!',
-        url: `https://hub.tappen.app/card/${card}`
+        url: shareUrl
       };
 
       try {
@@ -142,7 +146,7 @@ const CardFooter = memo(function CardFooter(props: CardFooterProps) {
     } else if (pressedId === "flag") {
       setModalContent("Report Card:")
     }
-  }, [card, toggleStarred])
+  }, [card, shareUrl, toggleStarred])
 
   // Memoize flag handler
   const handleFlag = useCallback(async (event: React.MouseEvent<HTMLButtonElement>) => {

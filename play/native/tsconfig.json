@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../src/*"],
+      "next/link": ["src/shims/next-link.tsx"],
+      "next/image": ["src/shims/next-image.tsx"],
+      "next/navigation": ["src/shims/next-navigation.tsx"],
+      "@/client/links": ["src/platform/links.ts"]
+    }
+  },
+  "include": ["src", "vite.config.ts", "capacitor.config.ts"]
+}
