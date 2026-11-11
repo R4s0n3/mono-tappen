@@ -1,5 +1,5 @@
 'use client'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { ArrowPathRoundedSquareIcon, ChevronDoubleRightIcon } from "@heroicons/react/24/solid";
 import TappenCard from "./tappen-card/tappen-card";
 import TinderCard from "react-tinder-card";
@@ -16,9 +16,20 @@ type GameCardsProps = {
     skin: string,
     id: string
   }[]
+  /**
+   * `overlay` pins the previous/next icons over the page. That is the website.
+   * `external` leaves those actions to the caller, which is how the native
+   * shell keeps them out of the host/join row.
+   */
+  controls?: "overlay" | "external"
 }
 
-export default function GameCards({ cards }: GameCardsProps) {
+export type GameCardsHandle = {
+  previous: () => Promise<void>
+  next: () => Promise<void>
+}
+
+function GameCards({ cards, controls = "overlay" }: GameCardsProps, ref: React.ForwardedRef<GameCardsHandle>) {
   const [gameOver, setGameOver] = useState(false);
   const [activeCard, setActiveCard] = useState(cards.length - 1);
   const swipeSettings = useTappenCardSwipeSettings();
@@ -75,6 +86,11 @@ export default function GameCards({ cards }: GameCardsProps) {
     await childRefs[newIndex]?.current?.restoreCard();
   }, [canGoBack, activeCard, childRefs, updateActiveCard]);
 
+  useImperativeHandle(ref, () => ({
+    previous: goBack,
+    next: () => swipe("right"),
+  }), [goBack, swipe]);
+
   // Memoize modal content to prevent unnecessary re-renders
   const modalContent = useMemo(() => (
     <div className="absolute z-50 top-0 left-0 bg-tappen-blue-900/90 flex flex-col justify-center items-center size-full">
@@ -106,11 +122,15 @@ export default function GameCards({ cards }: GameCardsProps) {
   ), []);
 
   return (
-    <div className="flex min-h-96 justify-center items-center w-full h-full">
+    <div className={controls === "external"
+      ? "native-card-stage absolute inset-0 flex min-h-0 w-full items-center justify-center"
+      : "flex min-h-96 justify-center items-center w-full h-full"}>
       <Modal selector="modal-hook" show={gameOver}>
         {modalContent}
       </Modal>
-      <div className="p-2 flex flex-col justify-center items-center text-center">
+      <div aria-hidden={controls === "external" ? true : undefined} className={controls === "external"
+        ? "pointer-events-none absolute inset-0 flex flex-col items-center justify-center p-2 text-center"
+        : "p-2 flex flex-col justify-center items-center text-center"}>
         <h2>Game Over?</h2>
         <p>Refresh the page to shuffle your cards.</p>
       </div>
@@ -138,16 +158,20 @@ export default function GameCards({ cards }: GameCardsProps) {
         );
       })}
 
-      <div className="w-full flex justify-center items-center absolute bottom-6 px-4">
-        <div className="w-full flex max-w-xl justify-between">
-          <button type="button" onClick={goBack}>
-            <ArrowPathRoundedSquareIcon className="size-8" />
-          </button>
-          <button type="button" onClick={() => swipe("right")}>
-            <ChevronDoubleRightIcon className="size-8" />
-          </button>
+      {controls === "overlay" ? (
+        <div className="w-full flex justify-center items-center absolute bottom-6 px-4">
+          <div className="w-full flex max-w-xl justify-between">
+            <button type="button" onClick={goBack}>
+              <ArrowPathRoundedSquareIcon className="size-8" />
+            </button>
+            <button type="button" onClick={() => swipe("right")}>
+              <ChevronDoubleRightIcon className="size-8" />
+            </button>
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }
+
+export default React.forwardRef(GameCards);

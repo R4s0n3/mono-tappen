@@ -2,7 +2,7 @@
 
 Dieser Build ist für interne Tester. Du archivierst ihn auf dem Mac und lädst ihn mit Xcode hoch. Es gibt noch kein Sign in with Apple. Solo-Spiel, Discover und Räume funktionieren ohne Account.
 
-Die App ist in v1 nur fürs iPhone, nur Hochformat. iPad ist absichtlich nicht dabei. Mindestversion ist iOS 15. Xcode 27 baut ein Target 14.0 nicht mehr. Apps, die mit dem iOS-27-SDK gebaut werden, brauchen den UIScene-Lifecycle, sonst stürzt der Start auf dem Gerät ab. Der ist in `Info.plist` und `SceneDelegate.swift`. Build 1 hatte ihn nicht; dieser Stand ist Build 2.
+Die App ist in v1 nur fürs iPhone, nur Hochformat. iPad ist absichtlich nicht dabei. Mindestversion ist iOS 15. Xcode 27 baut ein Target 14.0 nicht mehr. Apps, die mit dem iOS-27-SDK gebaut werden, brauchen den UIScene-Lifecycle, sonst stürzt der Start auf dem Gerät ab. Der ist in `Info.plist` und `SceneDelegate.swift`. Build 1 hatte ihn nicht. Build 3 rückt die unteren Knöpfe (Previous, Next, Host, Join) auseinander, damit sie auf dem iPhone nicht mehr in einer Zeile am Home-Indikator kleben.
 
 ## Eine Datei für Name und Bundle-ID
 
@@ -13,7 +13,7 @@ Alles, was sich ändern darf, steht in `app.identity.json`:
 | Anzeigename | Tappen |
 | Bundle-ID | `app.tappen.ios` |
 | Version | 0.1.0 (`MARKETING_VERSION`) |
-| Build | 2 (`CURRENT_PROJECT_VERSION`) |
+| Build | 3 (`CURRENT_PROJECT_VERSION`) |
 | Geräte | `1` = nur iPhone |
 
 Die Bundle-ID `app.tappen.ios` ist eine Entscheidung von dir. Wenn sie anders heißen soll, änderst du nur diese Datei und führst danach aus:

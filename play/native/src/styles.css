@@ -23,3 +23,51 @@
 .fontStyle_light {
   @apply text-tappen-blue-100;
 }
+
+/* Size the solo card to the space above the native dock. iOS 15 has no container
+   queries, so the fallback uses the viewport. Newer WebKit uses the real slot. */
+.native-card-stage .tappen-swipe-card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.native-card-stage .tappen-swipe-card > div {
+  min-width: 0;
+  width: auto;
+  max-width: 100%;
+  height: min(
+    27.6rem,
+    calc(
+      100vh - max(1rem, env(safe-area-inset-top, 0px)) - env(safe-area-inset-bottom, 0px) - 16rem
+    )
+  );
+  aspect-ratio: 5 / 6.9;
+}
+
+.native-card-stage .tappen-swipe-card > div > div {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  aspect-ratio: auto;
+}
+
+@supports (width: 1cqi) {
+  .native-card-stage {
+    container-type: size;
+  }
+
+  .native-card-stage .tappen-swipe-card > div {
+    width: min(20rem, 100cqi, calc(100cqb * 5 / 6.9));
+    height: auto;
+    max-height: 100%;
+    aspect-ratio: auto;
+  }
+
+  .native-card-stage .tappen-swipe-card > div > div {
+    height: auto;
+    aspect-ratio: 5 / 6.9;
+  }
+}
