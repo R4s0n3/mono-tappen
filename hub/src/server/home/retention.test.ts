@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 
 import { skinsGrantedByPurchase } from "../payment/payment-state";
 import { describeEntitlement, premiumSkinIdFromProduct } from "./entitlement";
-import { keepSkinAfterRefund, keepSubscriptionAfterRefund } from "./retention";
+import { activeApplePremiumGrant, keepSkinAfterRefund, keepSubscriptionAfterRefund } from "./retention";
 
 describe("box grant survives a shop refund", () => {
   it("keeps Premium when the account redeemed a Home box", () => {
@@ -12,6 +12,7 @@ describe("box grant survives a shop refund", () => {
       keepSubscriptionAfterRefund({
         anotherCompletedPremiumPayment: false,
         redeemedHomeBox: true,
+        activeAppleGrant: false,
       }),
       true,
     );
@@ -19,6 +20,7 @@ describe("box grant survives a shop refund", () => {
       keepSubscriptionAfterRefund({
         anotherCompletedPremiumPayment: true,
         redeemedHomeBox: false,
+        activeAppleGrant: false,
       }),
       true,
     );
@@ -26,6 +28,15 @@ describe("box grant survives a shop refund", () => {
       keepSubscriptionAfterRefund({
         anotherCompletedPremiumPayment: false,
         redeemedHomeBox: false,
+        activeAppleGrant: true,
+      }),
+      true,
+    );
+    assert.equal(
+      keepSubscriptionAfterRefund({
+        anotherCompletedPremiumPayment: false,
+        redeemedHomeBox: false,
+        activeAppleGrant: false,
       }),
       false,
     );
@@ -33,13 +44,30 @@ describe("box grant survives a shop refund", () => {
 
   it("keeps only the Premium card skin that the box granted", () => {
     assert.equal(
-      keepSkinAfterRefund({ grantedByAnotherPayment: false, grantedByHomeBox: true }),
+      keepSkinAfterRefund({ grantedByAnotherPayment: false, grantedByHomeBox: true, grantedByApple: false }),
       true,
     );
     assert.equal(
-      keepSkinAfterRefund({ grantedByAnotherPayment: false, grantedByHomeBox: false }),
+      keepSkinAfterRefund({ grantedByAnotherPayment: false, grantedByHomeBox: false, grantedByApple: true }),
+      true,
+    );
+    assert.equal(
+      keepSkinAfterRefund({ grantedByAnotherPayment: false, grantedByHomeBox: false, grantedByApple: false }),
       false,
     );
+  });
+
+  it("treats a refunded or unrelated Apple row as no grant", () => {
+    assert.equal(
+      activeApplePremiumGrant({ productId: "app.tappen.ios.premium", revokedAt: null }),
+      true,
+    );
+    assert.equal(
+      activeApplePremiumGrant({ productId: "app.tappen.ios.premium", revokedAt: new Date() }),
+      false,
+    );
+    assert.equal(activeApplePremiumGrant({ productId: "other", revokedAt: null }), false);
+    assert.equal(activeApplePremiumGrant(null), false);
   });
 
   it("selects the same Premium skin the shop grants", () => {

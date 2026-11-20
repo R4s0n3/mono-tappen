@@ -30,10 +30,10 @@ export const screens: NativeScreen[] = [
  * call the client from platform/api.ts. Suggested slots:
  * - /decks and /decks/new — deck list and create. Premium is the extra-deck gate.
  * - /profile — entitlement and display name. Account deletion is /account.
- * - /skins — owned skins, purchased with StoreKit (platform/purchases.ts).
+ * - /skins — the Premium skin builder. Skins are not in-app purchases.
  */
 export const futureHubScreens: Array<{ path: string; notes: string }> = [
   { path: "/decks", notes: "deck.list and deck.create" },
   { path: "/profile", notes: "account.entitlement, profile, delete account" },
-  { path: "/skins", notes: "skin catalog and StoreKit non-consumables" },
+  { path: "/skins", notes: "Premium skin builder, not a catalog of purchases" },
 ];

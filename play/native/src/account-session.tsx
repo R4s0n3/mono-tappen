@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { configureRuntime } from "@/client/runtime";
 
@@ -7,9 +7,15 @@ import {
   appleSignInCancelled,
   clearAccessToken,
   getAccessToken,
+  premiumAppAccountToken,
   requestAppleCredential,
   saveAccessToken,
 } from "./platform/auth";
+import {
+  finishPremiumTransaction,
+  listenForPremiumTransactions,
+  premiumPurchaseAvailable,
+} from "./platform/purchases";
 
 type AccountContextValue = {
   ready: boolean;
@@ -31,6 +37,12 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const signInMutation = api.account.signInWithApple.useMutation();
   const signOutMutation = api.account.signOut.useMutation();
   const deleteMutation = api.account.delete.useMutation();
+  const purchasePremium = api.account.purchasePremium.useMutation();
+  const reconcilePremium = api.account.reconcilePremium.useMutation();
+  const purchaseRef = useRef(purchasePremium.mutateAsync);
+  const reconcileRef = useRef(reconcilePremium.mutateAsync);
+  purchaseRef.current = purchasePremium.mutateAsync;
+  reconcileRef.current = reconcilePremium.mutateAsync;
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +59,53 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signedIn = Boolean(token);
+
+  useEffect(() => {
+    if (!signedIn || !premiumPurchaseAvailable()) return;
+    let cancelled = false;
+    let remove = () => {};
+    void (async () => {
+      try {
+        const reconciled = await reconcileRef.current();
+        if (!cancelled && reconciled.outcome === "revoked") await utils.account.entitlement.invalidate();
+      } catch {
+        // The app still opens when Apple cannot be reached.
+      }
+      try {
+        const me = await utils.account.me.fetch();
+        if (cancelled) return;
+        const appAccountToken = (await premiumAppAccountToken(me.id)).toLowerCase();
+        const handle = await listenForPremiumTransactions((event) => {
+          if (!event.appAccountToken || event.appAccountToken.toLowerCase() !== appAccountToken) return;
+          void purchaseRef
+            .current({ signedTransaction: event.signedTransaction })
+            .then(async (claimed) => {
+              for (const transactionId of claimed.transactionIds) {
+                await finishPremiumTransaction(transactionId);
+              }
+              await utils.account.entitlement.invalidate();
+            })
+            .catch(() => {
+              // Leave the transaction unfinished so the next launch can retry.
+            });
+        });
+        if (cancelled) {
+          await handle.remove();
+          return;
+        }
+        remove = () => {
+          void handle.remove();
+        };
+      } catch {
+        // A Keychain or network failure leaves the purchase unfinished until the next launch.
+      }
+    })();
+    return () => {
+      cancelled = true;
+      remove();
+    };
+  }, [signedIn, utils]);
+
   configureRuntime({
     accountActions: signedIn,
     getAccessToken,
