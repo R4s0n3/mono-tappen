@@ -3,6 +3,7 @@ import { deckRouter } from "./routers/deck";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { tagRouter } from "./routers/tag";
 import { userRouter } from "./routers/user";
+import { ownSkinRouter } from "./routers/own-skin";
 import { skinRouter } from "./routers/skin";
 import { paymentRouter } from "./routers/payment";
 import { productRouter } from "./routers/product";
@@ -15,6 +16,7 @@ export const appRouter = createTRPCRouter({
   card: cardRouter,
   deck: deckRouter,
   payment: paymentRouter,
+  ownSkin: ownSkinRouter,
   skin: skinRouter,
   user: userRouter,
   tag: tagRouter,

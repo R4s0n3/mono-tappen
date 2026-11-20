@@ -250,6 +250,8 @@ model User {
   subscription     Subscription?
   players          Player[]
   redeemedBoxCodes HomeBoxCode[]
+  ownSkins         OwnSkin[]
+  ownSkinEquip     OwnSkinEquip?
 }
 
 model Subscription {
@@ -402,4 +404,32 @@ model HomeBoxAttempt {
   createdAt DateTime @default(now())
 
   @@index([ipHash, createdAt])
+}
+
+/// A card skin saved by one account. `config` is versioned JSON from the
+/// skin builder allowlist (palette, gradient, pattern, frame tier, font).
+/// The database trigger own_skin_limit caps each account at 12 rows.
+/// Migration: play/prisma/migrations/20261120183000_own_skins.
+model OwnSkin {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  configVersion Int           @default(1)
+  config        Json
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  equip         OwnSkinEquip?
+
+  @@index([userId])
+}
+
+/// The one own skin shown on cards this account plays.
+/// Shop skins stay on the card and show when this row is absent.
+model OwnSkinEquip {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skinId    String   @unique
+  skin      OwnSkin  @relation(fields: [skinId], references: [id], onDelete: Cascade)
+  updatedAt DateTime @updatedAt
 }

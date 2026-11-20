@@ -19,6 +19,9 @@ export function HomeScreen() {
   const cardsRef = useRef<GameCardsHandle>(null);
   const account = useAccount();
 
+  const equipped = api.ownSkin.equipped.useQuery(undefined, { enabled: account.signedIn });
+  const waitingForSkin = account.signedIn && equipped.isPending;
+
   const cards = api.card.getByParams.useQuery(
     {
       mode,
@@ -36,7 +39,7 @@ export function HomeScreen() {
     <main className="relative z-0 flex min-h-dvh flex-col items-center gap-3 overflow-hidden bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[calc(env(safe-area-inset-bottom)+0.75rem)] text-tappen-blue-200">
       <img className="h-8 w-8 shrink-0" width={69} height={69} alt="tappen-app-logo" src="/logo.svg" />
       <div className="relative flex min-h-0 w-full max-w-xl flex-1 flex-col items-center justify-center">
-        {hasGameMode && cards.isPending ? (
+        {hasGameMode && (cards.isPending || waitingForSkin) ? (
           <div className="size-10 animate-spin rounded-full border-4 border-tappen-blue-300 border-t-tappen-sunset-400" />
         ) : null}
         {hasGameMode && cards.isError ? (
@@ -44,10 +47,11 @@ export function HomeScreen() {
             Could not load cards. Check the connection and try again.
           </p>
         ) : null}
-        {deckReady && cards.data ? (
+        {deckReady && cards.data && !waitingForSkin ? (
           <GameCards
             ref={cardsRef}
             controls="external"
+            playSkin={equipped.data?.playSkin ?? null}
             cards={cards.data.map((card) => ({
               id: card.cardId,
               skin: card.skinId,
