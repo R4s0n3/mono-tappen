@@ -4,6 +4,7 @@ import { cardShareUrl } from "@/client/links"
 import { getRuntime } from "@/client/runtime"
 import { api } from "@/trpc/react"
 import CardSkin, { type CardSkinItem } from "./_elements/card-skin"
+import type { PlaySkin } from "@/shared/own-skin"
 import { StarIcon, FireIcon, XMarkIcon } from "@heroicons/react/24/solid"
 import { StarIcon as StarIconOutline } from "@heroicons/react/24/outline"
 import { ArrowUpOnSquareIcon as ShareIcon, FlagIcon } from "@heroicons/react/24/outline"
@@ -14,6 +15,7 @@ import { CardFace, CardFooterFrame, cardFooterLabelClass } from "./card-face"
 type TappenCardProps = {
   card?: string,
   skin?: string | CardSkinItem,
+  playSkin?: PlaySkin | null,
   children?: React.ReactNode
 }
 
@@ -221,7 +223,7 @@ const CardFooter = memo(function CardFooter(props: CardFooterProps) {
 
 // Main TappenCard component - memoized
 const TappenCard = memo(function TappenCard(props: TappenCardProps) {
-  const { card = "default", skin = "default", children } = props
+  const { card = "default", skin = "default", playSkin = null, children } = props
 
   const { data: fetchedCard } = api.card.getByPublicId.useQuery(card, {
     enabled: card !== "default",
@@ -233,7 +235,10 @@ const TappenCard = memo(function TappenCard(props: TappenCardProps) {
 
   return (
     <div className="w-full cursor-pointer max-w-xs aspect-[5/6.9]">
-      <CardSkin {...(typeof skin === 'string' ? { skinId: skin } : { skinObject: skin })}>
+      <CardSkin
+        playSkin={playSkin}
+        {...(typeof skin === 'string' ? { skinId: skin } : { skinObject: skin })}
+      >
         {!children && cardData && (
           <CardFace
             id={props.card}

@@ -1,6 +1,7 @@
 import { accountRouter } from "@/server/api/routers/account";
 import { cardRouter } from "@/server/api/routers/card";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
+import { ownSkinRouter } from "./routers/own-skin";
 import { roomRouter } from "./routers/room";
 import { skinRouter } from "./routers/skin";
 
@@ -12,6 +13,7 @@ import { skinRouter } from "./routers/skin";
 export const appRouter = createTRPCRouter({
   account: accountRouter,
   card: cardRouter,
+  ownSkin: ownSkinRouter,
   room: roomRouter,
   skin: skinRouter,
 });

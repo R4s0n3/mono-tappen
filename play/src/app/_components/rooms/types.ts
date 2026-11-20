@@ -1,4 +1,5 @@
 import type { CardTransform } from "@/shared/card-transform";
+import type { PlaySkin } from "@/shared/own-skin";
 
 export type { CardTransform };
 
@@ -31,6 +32,8 @@ export type RoomState = {
     cardId: string;
     content: string;
     skinId: string;
+    /** Host's equipped own skin. Missing or null keeps the shop skin. */
+    playSkin?: PlaySkin | null;
     nsfw: boolean;
     targetId: string | null;
   } | null;

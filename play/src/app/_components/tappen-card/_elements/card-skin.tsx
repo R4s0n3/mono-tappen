@@ -1,6 +1,7 @@
 'use client'
 import { memo, useEffect, useState, useMemo } from "react"
 import { api } from "@/trpc/react"
+import { cardFaceSkin, patternOverlay, type PlaySkin } from "@/shared/own-skin"
 
 export type RARITY_TYPE = "common" | "rare" | "epic" | "legendary"
 
@@ -27,7 +28,9 @@ export type CardSkinItem = {
 type CardSkinProps = {
     children: React.ReactNode,
     skinId?: string,
-    skinObject?: CardSkinItem
+    skinObject?: CardSkinItem,
+    /** Equipped own skin. When it is safe, it replaces the shop skin. */
+    playSkin?: PlaySkin | null,
 }
 
 export const defaultSkin: CardSkinItem = {
@@ -65,32 +68,39 @@ function createDynamicBackgroundStyle(styleObj: CardSkinItem['background']) {
 
 // Memoized CardSkin component
 const CardSkin = memo(function CardSkin(props: CardSkinProps) {
-    const { children, skinId, skinObject } = props
+    const { children, skinId, skinObject, playSkin } = props
+    const face = cardFaceSkin(skinId ?? "", playSkin)
+    const ownSkin = face.source === "own" ? face.playSkin : null
 
-    // Query with optimized options
+    // Query with optimized options. An equipped own skin skips the shop lookup.
     const { data: fetchedSkin } = api.skin.getStyle.useQuery(skinId ?? "", {
-        enabled: !!skinId && !skinObject,
+        enabled: !!skinId && !skinObject && !ownSkin,
         retry: 2,
         staleTime: 300000, // 5 minutes - reduce network requests
        
     })
 
     // Initialize with skinObject or defaultSkin to reduce state updates
-    const [cardSkin, setCardSkin] = useState<CardSkinItem>(skinObject ?? defaultSkin)
+    const [cardSkin, setCardSkin] = useState<CardSkinItem>(ownSkin ?? skinObject ?? defaultSkin)
 
     // Only update when fetched skin changes
     useEffect(() => {
+        if (ownSkin) return
         if (fetchedSkin) {
             setCardSkin(fetchedSkin);
         }
-    }, [fetchedSkin]);
+    }, [fetchedSkin, ownSkin]);
 
     // Only update when passed skin object changes
     useEffect(() => {
+        if (ownSkin) {
+            setCardSkin(ownSkin);
+            return
+        }
         if (skinObject) {
             setCardSkin(skinObject);
         }
-    }, [skinObject]);
+    }, [skinObject, ownSkin]);
 
     // Memoize style calculations - only recalculate when cardSkin changes
     const { dynamicBackground, outterClasses, innerClasses } = useMemo(() => {
@@ -106,13 +116,17 @@ const CardSkin = memo(function CardSkin(props: CardSkinProps) {
         };
     }, [cardSkin]);
 
+    const overlay = ownSkin ? patternOverlay(ownSkin.pattern, ownSkin.patternColor) : null
 
     return (
         <div
             style={dynamicBackground}
             className={`size-full relative overflow-hidden rounded p-2 ${outterClasses.join(" ")}`}
         >
-            <div className={`skin-border ${innerClasses.join(" ")} w-full h-full p-2 lg:gap-6`}>
+            {overlay ? (
+                <div aria-hidden className="pointer-events-none absolute inset-0 z-0" style={overlay} />
+            ) : null}
+            <div className={`skin-border ${innerClasses.join(" ")} w-full h-full p-2 lg:gap-6 ${overlay ? "relative z-[1]" : ""}`}>
                 {children}
             </div>
         </div>

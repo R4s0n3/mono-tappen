@@ -8,6 +8,7 @@ import {
   SWIPE_THRESHOLD,
   type CardTransform,
 } from "@/shared/card-transform";
+import type { PlaySkin } from "@/shared/own-skin";
 import CardSkin from "../tappen-card/_elements/card-skin";
 import { CardFace, CardFooterFrame, cardFooterLabelClass } from "../tappen-card/card-face";
 import type { CardSocket, RoomStatus } from "./types";
@@ -23,6 +24,7 @@ export type LiveCardHandle = {
 type LiveCardProps = {
   content: string;
   skinId: string;
+  playSkin?: PlaySkin | null;
   sequence: number;
   interactive: boolean;
   canAdvance: boolean;
@@ -68,7 +70,7 @@ export function useDealIntro(status: RoomStatus) {
 }
 
 export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveCard(
-  { content, skinId, sequence, interactive, canAdvance, intro, socket, onAdvance },
+  { content, skinId, playSkin, sequence, interactive, canAdvance, intro, socket, onAdvance },
   ref,
 ) {
   const areaRef = useRef<HTMLDivElement>(null);
@@ -408,7 +410,7 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
         onPointerUp={interactive ? endDrag : undefined}
         onPointerCancel={interactive ? endDrag : undefined}
       >
-        <CardSkin skinId={skinId}>
+        <CardSkin skinId={skinId} playSkin={playSkin}>
           <div className="relative size-full [transform-style:preserve-3d]">
             <div className="absolute inset-0 flex flex-col [backface-visibility:hidden]">
               <CardFace

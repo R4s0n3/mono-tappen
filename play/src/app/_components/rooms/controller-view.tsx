@@ -91,6 +91,7 @@ export function ControllerView({
         <LiveCard
           content={state.turn.content}
           skinId={state.turn.skinId}
+          playSkin={state.turn.playSkin}
           sequence={state.turn.sequence}
           interactive={isHost}
           canAdvance={isHost && seat.role === "STAGE"}
