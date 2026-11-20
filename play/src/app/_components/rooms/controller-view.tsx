@@ -30,7 +30,7 @@ export function ControllerView({
         </span>
         <h1 className="font-lilita-one text-3xl text-tappen-blue-50">Waiting for the host…</h1>
         <p className="max-w-xs text-tappen-blue-300">
-          When the host draws, the card shows up here — the same one as the stage.
+          When the host draws, the card shows up here. Same one as the stage.
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           {state.players.map((p) => (
@@ -65,7 +65,7 @@ export function ControllerView({
             onClick={() => router.push(claimUrl)}
             className="font-lilita-one rounded-full bg-tappen-sunset-500 px-8 py-4 text-xl text-tappen-blue-900 transition hover:bg-tappen-sunset-400"
           >
-            That was me — claim it
+            That was me. Claim it
           </button>
         ) : (
           <p className="max-w-xs text-tappen-blue-300">Saving this night to an account is coming soon.</p>

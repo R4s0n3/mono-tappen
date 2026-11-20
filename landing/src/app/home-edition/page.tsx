@@ -12,7 +12,7 @@ import { env } from "@/env";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Tappen Home — preorder the printed set",
+  title: "Tappen Home: preorder the printed set",
   description: `Preorder Tappen Home: 100 original English cards, boxed. Each box has a single-use code that permanently unlocks Tappen Premium and the Premium card skin for one account. ${formatEur(HOME_UNIT_AMOUNT_CENTS)} incl. VAT. Ships to Germany and the EU before Christmas 2026 (by ${HOME_SHIP_BY_LABEL}).`,
 };
 
