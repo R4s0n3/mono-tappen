@@ -14,7 +14,7 @@ export function Header() {
           Tappen
         </h1>
         <p className="text-lg leading-snug text-tappen-blue-100 sm:text-xl">
-          A game, not therapy.
+          Good questions. Better nights.
         </p>
       </div>
       <div className="flex w-full max-w-md gap-3 lg:w-auto lg:max-w-none">

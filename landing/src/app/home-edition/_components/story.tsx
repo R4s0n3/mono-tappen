@@ -90,8 +90,8 @@ export function HomeEditionStory({
               In the box
             </h2>
             <p className="mt-4 text-xl leading-relaxed text-tappen-blue-200">
-              A physical set you put on the table. No account required to read
-              the cards. No ads.
+              A printed, ad-free set for the middle of the table. Pass the
+              cards and read the questions straight off them.
             </p>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
@@ -100,12 +100,12 @@ export function HomeEditionStory({
               for this set. The same prompts the app already knows.
             </BoxTile>
             <BoxTile title="A box" kicker="For the table">
-              Boxed so it can live on a shelf and come out when people are
-              actually in the room.
+              A box for the shelf, ready to come out when people are in the
+              room.
             </BoxTile>
             <BoxTile title="A single-use code" kicker="One account">
-              Scanning it does not use it up. You sign in, confirm the account,
-              and that account permanently keeps Tappen Premium and the Premium
+              The code waits until you sign in and confirm the account. That
+              one account then permanently keeps Tappen Premium and the Premium
               card skin.
             </BoxTile>
           </div>
@@ -144,29 +144,29 @@ export function HomeEditionStory({
             </h2>
             <p className="text-xl leading-relaxed text-tappen-blue-200">
               The card is the conversation. The app is the table’s shared
-              screen. The box does not replace play.tappen.app, and the app does
-              not replace the box.
+              screen. Bring both to the same night: the box in your hands,
+              play.tappen.app up where everyone can see.
             </p>
             <ol className="flex flex-col gap-6">
               <Step n="1" title="Scan the code in the box">
                 The insert is a single-use code for one account. It permanently
                 unlocks Tappen Premium and the Premium card skin. The sample
-                code on this page is different: it opens the free room so you
-                can try play before the box arrives.
+                code on this page is a separate invite: it opens a free room so
+                you can try play while you wait for the box.
               </Step>
               <Step n="2" title="One stage">
                 Prop up a phone, a laptop, or a TV. That device shows the
                 current card large enough for the whole table.
               </Step>
               <Step n="3" title="Everyone else joins">
-                Other players open the room on their phones as controllers. They
-                send the next move. They don’t need the card text on their own
+                Other players open the room on their phones as controllers and
+                send the next move, while the card stays big on the shared
                 screen.
               </Step>
             </ol>
             <p className="text-lg text-tappen-blue-200">
-              Playing online is free. Buying the box is optional, and it is a
-              one-time payment.
+              Playing online is free. The box is there when you want it in the
+              room, and it is a one-time payment.
             </p>
           </div>
           <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-5 rounded-[2rem] bg-tappen-blue-50 px-8 py-10 text-tappen-blue-900 shadow-2xl">
@@ -201,12 +201,12 @@ export function HomeEditionStory({
             </h2>
             <div className="rounded-3xl border-l-4 border-tappen-sunset-400 bg-tappen-blue-900/70 p-6">
               <p className="text-xl font-bold">
-                This is a preorder, not a box we ship tomorrow.
+                Preorder now. We ship before Christmas 2026.
               </p>
               <p className="mt-2 text-lg leading-relaxed text-tappen-blue-200">
-                We expect to hand orders to the carrier before Christmas 2026,
-                by {HOME_SHIP_BY_LABEL}. Transit inside Germany and the EU is on
-                top of that and depends on the destination.
+                Pay once today. We hand orders to the carrier before Christmas
+                2026, by {HOME_SHIP_BY_LABEL}. Transit inside Germany and the EU
+                comes after that and depends on the destination.
               </p>
             </div>
             <dl className="grid gap-4 text-lg">
@@ -264,8 +264,8 @@ export function HomeEditionStory({
           </h2>
           <div className="divide-y divide-tappen-blue-700 border-y border-tappen-blue-700">
             <Faq q="Is this really a preorder?">
-              Yes. Tappen Home is not sitting in a warehouse today. You pay once
-              now, and we ship before Christmas 2026, by {HOME_SHIP_BY_LABEL}.
+              Yes. This is a Christmas 2026 preorder. You pay once now, and we
+              ship before Christmas 2026, by {HOME_SHIP_BY_LABEL}.
             </Faq>
             <Faq q="What will I be charged?">
               {unitPrice} incl. VAT per box, plus {formatShipping(deCents)}{" "}
@@ -274,12 +274,12 @@ export function HomeEditionStory({
               pick. Stripe shows that same total again before you pay.
             </Faq>
             <Faq q="Where do you ship?">
-              Germany and the other member states of the European Union.
-              Checkout will not accept an address outside the region you select.
+              Germany and the other member states of the European Union. At
+              checkout, pick that region and use an address inside it.
             </Faq>
             <Faq q="Do I need the app?">
-              You can read the printed cards with no account and no phone. The
-              code in the box permanently unlocks Tappen Premium and the Premium
+              Read the printed cards straight from the box, around the table.
+              The code inside permanently unlocks Tappen Premium and the Premium
               card skin for one logged-in account. Playing a room on
               play.tappen.app is still free.
             </Faq>
@@ -296,9 +296,9 @@ export function HomeEditionStory({
               .
             </Faq>
             <Faq q="Is this a subscription?">
-              The box is a one-time payment, not a renewal. The code inside
-              permanently unlocks Tappen Premium and the Premium card skin for
-              one account. Nothing on this page signs you up for mail.
+              The box is a one-time payment. The code inside permanently unlocks
+              Tappen Premium and the Premium card skin for one account. Your
+              email on this page is for the order and the receipt.
             </Faq>
           </div>
         </div>
