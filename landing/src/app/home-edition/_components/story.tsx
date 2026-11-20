@@ -151,8 +151,8 @@ export function HomeEditionStory({
               <Step n="1" title="Scan the code in the box">
                 The insert is a single-use code for one account. It permanently
                 unlocks Tappen Premium and the Premium card skin. The sample
-                code on this page is a separate invite: it opens a free room so
-                you can try play while you wait for the box.
+                code on this page is a separate invite. It opens play.tappen.app,
+                where you can host a free night while you wait for the box.
               </Step>
               <Step n="2" title="One stage">
                 Prop up a phone, a laptop, or a TV. That device shows the
