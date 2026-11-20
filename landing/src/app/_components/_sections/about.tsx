@@ -10,13 +10,13 @@ export function About(){
     <div className="border-2 gap-2  rounded group cursor-pointer  border-tappen-blue-600 hover:border-tappen-green-400 bg-tappen-blue-900 flex-1 flex flex-col justify-between items-center text-start">
         <div className="p-8 flex flex-col gap-4 w-full">
         <h3 className="font-bang text-6xl text-tappen-green-400 uppercase">Cards</h3>
-        <div><span className="font-sans uppercase font-bold p-2 px-4 bg-tappen-blue-400 rounded-full text-xs">create and discover new cards everyday</span></div>
+        <div><span className="font-sans uppercase font-bold p-2 px-4 bg-tappen-blue-400 rounded-full text-xs">create and discover new cards every day</span></div>
         </div>
         <div className="flex flex-row -space-x-80 transition-transform duration-500 scale-75 group-hover:scale-90 group-hover:rotate-6">
             <div className="flex -space-x-72">
             <div className="-rotate-6 shadow-md z-10"><TappenCard>
         <div className="w-full h-full flex justify-center items-center text-6xl font-serif">
-            Whats your favorite flower?
+            {"What's your favorite flower?"}
             </div>
             </TappenCard></div>
         <div className="shadow-md transition duration-200 group-hover:z-20"><TappenCard><Link href="https://hub.tappen.app/card/create" className="w-full h-full flex justify-center items-center text-6xl">

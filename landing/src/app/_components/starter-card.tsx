@@ -21,7 +21,7 @@ export function StarterCard() {
             </p>
             <div className="flex flex-col gap-6">
               <p className="text-center font-serif text-2xl">
-                A game, not therapy.
+                Good questions. Better nights.
               </p>
               <span className="w-full animate-pulse text-center font-bold text-tappen-blue-500">
                 swipe to play

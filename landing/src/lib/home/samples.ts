@@ -5,8 +5,10 @@ export type SamplePrompt = {
 
 /**
  * The first prompt is the one on the reference card. The rest are still
- * returned by GET https://api.tappen.app/api/cards/published-cards,
- * copied as stored, including the original spelling.
+ * returned by GET https://api.tappen.app/api/cards/published-cards and
+ * copied as stored, with obvious wording fixed: the modifier letter grave
+ * in "What's" is a normal apostrophe, "happend" is "that happened", and
+ * "how would it look like" is "what would it look like".
  */
 export const HOME_SAMPLES: readonly SamplePrompt[] = [
   {
@@ -14,11 +16,11 @@ export const HOME_SAMPLES: readonly SamplePrompt[] = [
     author: "Tappen",
   },
   {
-    text: "Whatˋs your biggest kitchen fail?",
+    text: "What's your biggest kitchen fail?",
     author: "Tappen",
   },
   {
-    text: "If there was a solution to your anxiety, how would it look like?",
+    text: "If there was a solution to your anxiety, what would it look like?",
     author: "Tappen",
   },
   {
@@ -30,7 +32,7 @@ export const HOME_SAMPLES: readonly SamplePrompt[] = [
     author: "Tappen",
   },
   {
-    text: "What is the most embarrassing thing happend to you in school?",
+    text: "What is the most embarrassing thing that happened to you in school?",
     author: "Tappen",
   },
 ];

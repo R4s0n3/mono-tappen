@@ -27,7 +27,7 @@ const lilitaOne = Lilita_One({
 export const metadata: Metadata = {
   title: "Tappen App",
   description:
-    "Tappen is a conversation party game. A game, not therapy. Preorder Tappen Home, the printed English set of 100 cards.",
+    "Good questions. Better nights. Tappen is a fun social conversation card game. Preorder Tappen Home, the printed English set of 100 cards.",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
