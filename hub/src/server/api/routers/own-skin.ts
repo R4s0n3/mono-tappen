@@ -11,7 +11,7 @@ import {
   ownSkinTrpcError,
   readEquippedOwnSkin,
   updateOwnSkin,
-} from "../../../../../play/src/shared/own-skin.js";
+} from "@/shared/own-skin";
 
 const idInput = z.object({ id: z.string().min(1).max(64) }).strict();
 
