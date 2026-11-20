@@ -32,7 +32,7 @@ function HostForm() {
     {
       id: null,
       name: "Tappen",
-      description: "The classic pool — official Tappen cards",
+      description: "The classic pool: official Tappen cards",
       image: "/logo.svg",
     },
     ...(decks ?? []).map((d) => ({

@@ -32,7 +32,7 @@ onSwipe={() => {
                 <h2 className="font-bold text-5xl">Rules are simple:</h2>
                 <ul className="text-xl font-sans">
                 <li>Read it out loud</li>
-                <li>— and tell the truth</li>
+                <li>Tell the truth</li>
                 </ul>
                 </div>
             <div className="w-full text-center animate-pulse text-tappen-sunset-400">Swipe to start</div>

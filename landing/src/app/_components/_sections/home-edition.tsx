@@ -47,7 +47,7 @@ export function HomeEdition({
             </span>
           </p>
           <p className="text-balance text-lg font-bold text-tappen-sunset-200">
-            Preorder — arrives before{" "}
+            Preorder. Arrives before{" "}
             <span className="whitespace-nowrap">Christmas 2026</span>
           </p>
           <p className="max-w-xl text-base leading-relaxed text-tappen-blue-100 sm:text-lg">

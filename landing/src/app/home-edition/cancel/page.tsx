@@ -10,7 +10,7 @@ import { stripe } from "@/server/home/stripe";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Checkout cancelled — Tappen Home",
+  title: "Checkout cancelled: Tappen Home",
   robots: { index: false, follow: false },
 };
 

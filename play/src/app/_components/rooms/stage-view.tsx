@@ -200,7 +200,7 @@ export function StageView({
         />
       ) : (
         <p className="flex flex-1 items-center justify-center text-tappen-blue-300">
-          No card yet — draw the first one.
+          No card yet. Draw the first one.
         </p>
       )}
 

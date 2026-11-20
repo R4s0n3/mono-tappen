@@ -94,7 +94,7 @@ function ClaimFlow() {
       <div className="flex max-w-sm flex-col gap-4">
         <h2 className="font-lilita-one text-3xl text-tappen-sunset-400">Claimed</h2>
         <p className="text-tappen-blue-300">
-          This seat now belongs to your account — along with everything that happens
+          This seat now belongs to your account, along with everything that happens
           after it in future phases.
         </p>
       </div>
