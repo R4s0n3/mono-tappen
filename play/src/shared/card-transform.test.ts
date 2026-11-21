@@ -272,6 +272,16 @@ describe("card holder lock", () => {
     assert.ok(second.waitMs > 0);
   });
 
+  it("does not let an older turn clear the live holder", () => {
+    const grabbed = acceptCardTransform(alex, pose({ sequence: 4 }), roomState(4), 1_000);
+    assert.equal(grabbed.kind, "relay");
+    if (grabbed.kind !== "relay") return;
+    const rewind = noteRoomSequence(grabbed.state, 3);
+    assert.equal(rewind.sequence, 4);
+    assert.equal(rewind.holderId, "alex");
+    assert.equal(rewind.transform?.x, 0.62);
+  });
+
   it("clears the holder when the turn changes", () => {
     const grabbed = acceptCardTransform(alex, pose(), roomState(), 1_000);
     assert.equal(grabbed.kind, "relay");
@@ -331,7 +341,7 @@ describe("transform fanout", () => {
     fanout.releaseHolder("room", "sam", relay, 2_400);
   });
 
-  it("drops a deferred pose when the holder disconnects", () => {
+  it("drops a deferred pose when the holder disconnects", async () => {
     const fanout = createTransformFanout({ holdTimeoutMs: 30_000 });
     const seen: CardTransform[] = [];
     const relay = (transform: CardTransform) => seen.push(transform);
@@ -341,5 +351,9 @@ describe("transform fanout", () => {
     fanout.releaseHolder("room", "alex", relay, 3_020);
     assert.equal(seen.at(-1)?.x, 0.5);
     assert.equal(fanout.getTransform("room").x, 0.5);
+    const count = seen.length;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.equal(seen.length, count);
+    assert.equal(seen.some((transform) => transform.x === 0.9), false);
   });
 });

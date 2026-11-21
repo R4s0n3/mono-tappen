@@ -202,6 +202,11 @@ function applyHoldTimeout(state, now, holdTimeoutMs) {
 export function noteRoomSequence(state, sequence) {
   const current = normalizeState(state);
   const seq = typeof sequence === "number" ? sequence : null;
+  // A slow snapshot can still carry the previous turn. It must not clear the
+  // live hold or park the new card back at the old deal-in pose.
+  if (seq != null && current.sequence != null && seq < current.sequence) {
+    return current;
+  }
   if ((current.dealPending && seq != null) || (seq != null && current.sequence != null && seq !== current.sequence)) {
     return {
       transform: dealTransform(seq),

@@ -96,6 +96,7 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
   playerIdRef.current = playerId;
   const heldByOtherRef = useRef(false);
   const heldLabelRef = useRef<string | null>(null);
+  const releasePendingRef = useRef(false);
 
   const initial = socket.getTransform();
   const targetRef = useRef<CardTransform>(initial);
@@ -211,10 +212,18 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
       const incomingHolder = transform.holderId ?? null;
       const sequenceChanged = snap && transform.sequence !== targetRef.current.sequence;
       const otherHolder = incomingHolder != null && incomingHolder !== mine;
-      // A quiet hold expires on the server. Drop the local finger if it did.
-      const serverTookIt = dragging.current && incomingHolder !== mine;
+      const releaseAck =
+        releasePendingRef.current && !transform.dragging && incomingHolder == null;
+      if (releaseAck || sequenceChanged || otherHolder) {
+        releasePendingRef.current = false;
+      }
+      // A quiet hold expires on the server. A release echo is not that: the
+      // next grab waits until this one is acknowledged, so a late echo cannot
+      // cancel a newer finger.
+      const serverReleased =
+        dragging.current && !transform.dragging && incomingHolder == null;
 
-      if (sequenceChanged || otherHolder || serverTookIt) {
+      if (sequenceChanged || otherHolder || serverReleased) {
         cancelKind.current = sequenceChanged ? "turn" : "lock";
         epoch.current += 1;
         dragging.current = false;
@@ -314,6 +323,7 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
   };
 
   const springBack = async (sendToRoom: boolean) => {
+    releasePendingRef.current = true;
     const token = ++epoch.current;
     controlling.current = true;
     const from = { ...targetRef.current, dragging: false };
@@ -406,7 +416,15 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
   };
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!canDragRef.current || heldByOtherRef.current || committing.current || event.button !== 0) return;
+    if (
+      !canDragRef.current ||
+      heldByOtherRef.current ||
+      releasePendingRef.current ||
+      committing.current ||
+      event.button !== 0
+    ) {
+      return;
+    }
     const point = pointFrom(event);
     if (!point) return;
     epoch.current += 1;
@@ -460,6 +478,7 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
     const moved = Math.hypot(pose.x - startX, pose.y - startY);
     if (moved < 0.035) {
       const home = restTransform(sequenceRef.current);
+      releasePendingRef.current = true;
       publish({ ...home, flipped: !pose.flipped, dragging: false });
       controlling.current = false;
       return;

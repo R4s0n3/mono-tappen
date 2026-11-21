@@ -201,12 +201,14 @@ class RoomHub {
       (sock) => this.clients.get(sock)?.playerId === client.playerId
     );
     if (!stillConnected) {
+      // Release before the presence write. A reconnect during that write can
+      // grab again, and a late release would clear the new hold.
+      this.cards.releaseHolder(client.roomId, client.playerId, (transform) => {
+        this.relay(client.roomId, { type: "card.transform", transform });
+      });
       await prisma.player.update({
         where: { id: client.playerId },
         data: { isConnected: false, lastSeenAt: new Date() },
-      });
-      this.cards.releaseHolder(client.roomId, client.playerId, (transform) => {
-        this.relay(client.roomId, { type: "card.transform", transform });
       });
       await this.broadcast(client.roomId);
     }
@@ -226,11 +228,21 @@ class RoomHub {
     }
 
     let sequence = null;
+    let mixedTurn = false;
     for (const built of byRole.values()) {
-      if (built?.turn && typeof built.turn.sequence === "number") {
-        sequence = built.turn.sequence;
-        break;
+      const seq = built?.turn && typeof built.turn.sequence === "number" ? built.turn.sequence : null;
+      if (seq == null) continue;
+      if (sequence == null) {
+        sequence = seq;
+        continue;
       }
+      if (seq !== sequence) mixedTurn = true;
+    }
+    const live = this.cards.getTransform(roomId).sequence;
+    // Two role reads can straddle a draw. Sending the older one would rewind
+    // the card and drop the current hold. Same-turn presence updates still pass.
+    if (mixedTurn || (typeof live === "number" && sequence != null && sequence < live)) {
+      return;
     }
     const cardTransform = this.cards.noteSequence(roomId, sequence);
 

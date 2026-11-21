@@ -321,6 +321,12 @@ try {
   assert(guestMove.transform.holderName === "Alex", "holder name was not assigned");
   assert(guestMove.transform.dragging === true, "guest drag was not marked");
 
+  const sawAlex = (msg) =>
+    msg.transform?.holderId === VIEW_A.playerId &&
+    msg.transform?.x === 0.72 &&
+    msg.transform?.sequence === 2;
+  await until(() => relays(host.messages).find(sawAlex), "host saw the guest drag");
+  await until(() => relays(viewerA.messages).find(sawAlex), "holder saw their own drag");
   const hostBeforeSecond = relays(host.messages).length;
   const alexBeforeSecond = relays(viewerA.messages).length;
   late.ws.send(
