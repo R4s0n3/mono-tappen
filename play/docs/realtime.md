@@ -17,9 +17,10 @@ Chosen over a separate websocket process and over hosted providers because:
   and receives the current state. There is no per-room replay history to keep
   consistent across processes.
 - **Server authority is enforced by construction.** The turn changes only
-  through tRPC (`room.advance`). The socket also carries one ephemeral host
-  message, `card.transform`, which is a pose (where the card sits), not the
-  next card. It is not written to the database.
+  through tRPC (`room.advance`), and only the stage host may call it. The
+  socket also carries one ephemeral message, `card.transform`, which is a
+  pose (where the card sits), not the next card. Any joined player may drag.
+  It is not written to the database.
 
 Costs, accepted:
 
@@ -47,32 +48,45 @@ Client → server:
 }
 ```
 
-`card.transform` is host-only. `x` and `y` are normalized to the shared card
-area (`0..1`, with `0.5, 0.5` at rest). The deal-in and the swipe fly-out may
-leave that box; the server clamps both axes to `-1.5..2.5` and `rotation`
-(degrees) to `-180..180`. `flipped` is face-down. `dragging` is true while
-the host is holding the card. `sequence` is the turn the pose belongs to;
-frames for any other turn are dropped. While `dragging` is true the client
-sends from `requestAnimationFrame`, capped at about 30 Hz. A settled frame
+Any joined player may send `card.transform`. `x` and `y` are normalized to
+the shared card area (`0..1`, with `0.5, 0.5` at rest). The deal-in and the
+host's swipe fly-out may leave that box; the server clamps both axes to
+`-1.5..2.5` and `rotation` (degrees) to `-180..180`. `flipped` is face-down.
+`dragging` is true while a player is holding the card. `sequence` is the turn
+the pose belongs to; frames for any other turn are dropped. While `dragging`
+is true the holder sends from `requestAnimationFrame`, capped at about 30 Hz,
+and paints that pose locally instead of waiting for the echo. A settled frame
 is still capped, and the latest frame inside a window is flushed so the
-release is not lost. The server applies the same cap.
+release is not lost. The server applies the same cap. Receivers ease toward
+each broadcast on the next animation frame.
+
+The first `dragging: true` the server accepts owns the card. Move events from
+everyone else are ignored until that player releases, sends nothing for about
+3 seconds, disconnects, or the turn changes. A rejected grab is told the
+current pose and does not get a broadcast of its own. The relayed pose
+includes `holderId` and `holderName`, which the server assigns. A guest
+cannot flip the card or fly it out: a guest release is rewritten to the
+resting pose (`0.5, 0.5`), so a fling never draws the next card. Only the
+stage host may send a fly-out or a flip. Skip and draw are not socket events.
+`room.advance` is the only path, and it rejects anyone who is not that host.
 
 Server → client:
 
 ```json
 { "type": "state", "state": { "...snapshot...", "cardTransform": { "x": 0.5, "y": 0.5, "rotation": 0, "flipped": false, "dragging": false, "sequence": 3 } } }
-{ "type": "card.transform", "transform": { "x": 0.62, "y": 0.48, "rotation": 4.2, "flipped": false, "dragging": true, "sequence": 3 } }
+{ "type": "card.transform", "transform": { "x": 0.62, "y": 0.48, "rotation": 4.2, "flipped": false, "dragging": true, "sequence": 3, "holderId": "player_123", "holderName": "Alex" } }
 { "type": "pong" }
 { "type": "error", "error": "..." }
 ```
 
-The relay goes to every socket in the room. Only the room host
-(`player.id === room.hostId`, or the STAGE seat when `hostId` is null) is
-allowed to send a pose. Anyone else gets
-`{ "type": "error", "error": "only the host can move the card" }`. The last
-pose is kept in memory on the hub and copied onto the next snapshot, so a
-late joiner does not wait for the next gesture. `room.advance` marks the
-next snapshot as a deal-in (`y` above the area) before it broadcasts.
+The relay goes to every socket in the room. While someone holds the card,
+other players' poses are not relayed. The holder is cleared when the turn
+changes, so the next snapshot can deal the new card in from above the area.
+The last pose is kept in memory on the hub and copied onto the next snapshot,
+including who is holding it, so a late joiner does not wait for the next
+gesture. `room.advance` marks the next snapshot as a deal-in (`y` above the
+area) before it broadcasts, and it is refused unless the caller is the stage
+host.
 
 Snapshots are built by `src/server/realtime/snapshot.js`:
 

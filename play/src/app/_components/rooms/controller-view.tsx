@@ -6,8 +6,8 @@ import type { CardSocket, RoomState, Seat } from "./types";
 import { LiveCard, useDealIntro } from "./live-card";
 
 /**
- * Phones show the same card as the stage, full text included, and mirror the
- * host's gestures. They do not control the card unless this seat is the host.
+ * Phones show the same card as the stage, full text included. A joined player
+ * may drag it. Only the host can flip, skip, or draw.
  */
 export function ControllerView({
   state,
@@ -74,7 +74,7 @@ export function ControllerView({
     );
   }
 
-  // ACTIVE — full card, view-only unless this phone is the host seat.
+  // ACTIVE. Guests drag the card. The host is the only one who can skip.
   return (
     <div className="flex h-dvh flex-col overflow-hidden overscroll-none bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 text-center text-tappen-blue-100">
       <div className="flex shrink-0 items-center justify-center gap-2 px-4 pb-1 pt-[max(1.25rem,env(safe-area-inset-top))]">
@@ -93,8 +93,9 @@ export function ControllerView({
           skinId={state.turn.skinId}
           playSkin={state.turn.playSkin}
           sequence={state.turn.sequence}
-          interactive={isHost}
+          canDrag
           canAdvance={isHost && seat.role === "STAGE"}
+          playerId={seat.playerId}
           intro={intro}
           socket={socket}
           onAdvance={async () => undefined}
@@ -105,7 +106,9 @@ export function ControllerView({
         </p>
       )}
       <p className="shrink-0 px-6 pb-[max(1rem,env(safe-area-inset-bottom))] text-sm text-tappen-blue-300">
-        {isHost ? "you are moving the card" : "following the host"}
+        {isHost && seat.role === "STAGE"
+          ? "You are moving the card."
+          : "Drag the card. Only the host can skip."}
       </p>
     </div>
   );

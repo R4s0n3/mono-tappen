@@ -8,7 +8,7 @@ import {
 } from "@/server/api/trpc";
 import { buildRoomState, getRoomCardPool, playableCardWhere } from "@/server/realtime/snapshot";
 import { hub } from "@/server/realtime/hub";
-import type { CardTransform } from "@/shared/card-transform";
+import { canSkipOrDraw, type CardTransform } from "@/shared/card-transform";
 import { logIntent } from "@/server/observability";
 import type { db as DbClient } from "@/server/db";
 
@@ -224,16 +224,21 @@ export const roomRouter = createTRPCRouter({
       return roomView(input.roomId, player.role);
     }),
 
-  /** Stage only: advance to the next card. */
+  /** Stage host only: advance to the next card. Guests are rejected. */
   advance: publicProcedure
     .input(z.object({ roomId: z.string(), token: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const player = await resolvePlayer(ctx.db, input.roomId, input.token);
-      assertStage(player);
 
       const room = await ctx.db.room.findUnique({ where: { id: input.roomId } });
       if (!room || room.status === "ENDED") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "room is not active" });
+      }
+      if (!canSkipOrDraw(player, room)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only the host can draw the next card.",
+        });
       }
 
       const used = await ctx.db.turn.findMany({

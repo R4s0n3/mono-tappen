@@ -13,8 +13,8 @@ const FATAL_ERRORS = new Set([
 
 /**
  * Subscribes to a room's realtime channel. Room snapshots arrive as `state`.
- * The host's card pose arrives as `card.transform` and is fanned out to
- * listeners without putting every frame through React state.
+ * Card poses arrive as `card.transform` and are fanned out to listeners
+ * without putting every frame through React state.
  * Reconnect is a fresh subscribe: the snapshot includes the latest transform.
  */
 export function useRoomSocket(
