@@ -88,6 +88,7 @@ export function StageView({
   const [drawError, setDrawError] = useState<string | null>(null);
   const intro = useDealIntro(state.status);
   const cardRef = useRef<LiveCardHandle>(null);
+  const [faceDown, setFaceDown] = useState(() => socket.getTransform().flipped);
   const isHost = isHostSeat(state, seat);
 
   const advance = api.room.advance.useMutation({
@@ -210,6 +211,7 @@ export function StageView({
           intro={intro}
           socket={socket}
           onAdvance={requestAdvance}
+          onFaceDown={setFaceDown}
         />
       ) : (
         <p className="flex flex-1 items-center justify-center text-tappen-blue-300">
@@ -223,7 +225,9 @@ export function StageView({
         {isHost && state.turn && (
           <>
             <p className="text-xs uppercase tracking-widest text-tappen-blue-300">
-              drag · tap to flip · swipe for the next card
+              {faceDown
+                ? "drag · tap to reveal · swipe for the next card"
+                : "drag · tap to flip · swipe for the next card"}
             </p>
             <button
               type="button"

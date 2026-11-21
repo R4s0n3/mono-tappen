@@ -120,7 +120,7 @@ export function ControllerView({
       <p className="shrink-0 px-6 pb-[max(1rem,env(safe-area-inset-bottom))] text-sm text-tappen-blue-300">
         {isHost && seat.role === "STAGE"
           ? "You are moving the card."
-          : "Drag the card. Only the host can skip."}
+          : "Drag the card. Only the host can turn it or skip."}
       </p>
     </div>
   );

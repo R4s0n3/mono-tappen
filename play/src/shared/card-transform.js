@@ -66,13 +66,13 @@ export function restTransform(sequence = null) {
   };
 }
 
-/** New card waits just above the area, then the host deals it in. */
+/** New card waits just above the area, face down, then the host deals it in. */
 export function dealTransform(sequence = null) {
   return {
     x: 0.5,
     y: -0.42,
     rotation: -11,
-    flipped: false,
+    flipped: true,
     dragging: false,
     sequence,
     holderId: null,

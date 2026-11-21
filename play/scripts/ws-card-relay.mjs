@@ -260,12 +260,13 @@ try {
   fanout.beginDeal(ROOM);
   turnSequence = 2;
   const dealt = broadcast();
-  assert(dealt.y < 0 && dealt.sequence === 2 && dealt.flipped === false, "advance did not park the deal-in pose");
+  assert(dealt.y < 0 && dealt.sequence === 2 && dealt.flipped === true, "advance did not park the deal-in pose");
   const dealtState = await until(
     () => viewerA.messages.find((msg) => msg.type === "state" && msg.state?.turn?.sequence === 2),
     "deal snapshot",
   );
   assert(dealtState.state.cardTransform.y < 0, "viewers were not told to deal the next card");
+  assert(dealtState.state.cardTransform.flipped === true, "viewers were not dealt a face-down card");
 
   await delay(40);
   host.ws.send(
