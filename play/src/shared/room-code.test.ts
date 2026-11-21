@@ -34,6 +34,11 @@ describe("room codes", () => {
     assert.equal(middle.value, "AB");
     assert.equal(middle.selectionStart, 1);
     assert.equal(middle.selectionEnd, 1);
+
+    const expanded = uppercaseRoomCodeInput("AßB23", 2, 2);
+    assert.equal(expanded.value, "ASSB23");
+    assert.equal(expanded.selectionStart, 3);
+    assert.equal(expanded.selectionEnd, 3);
   });
 
   it("trims and uppercases a code before lookup", () => {

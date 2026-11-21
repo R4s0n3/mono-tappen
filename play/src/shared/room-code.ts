@@ -16,30 +16,27 @@ export function normalizeRoomCode(value: string): string {
 
 /**
  * Uppercase the field value as the player types or pastes.
- * Uppercase does not change the length, so the caret indexes still point
- * at the same place in the string.
+ * A few letters grow when uppercased, so each caret follows the uppercased
+ * prefix of the raw text instead of keeping the old index.
  */
 export function uppercaseRoomCodeInput(
   raw: string,
   selectionStart: number | null,
   selectionEnd: number | null,
 ): { value: string; selectionStart: number; selectionEnd: number } {
-  const value = raw.toUpperCase();
-  const length = value.length;
-  const start = clampIndex(selectionStart, length);
-  const end = clampIndex(selectionEnd, length);
+  const start = caretAfterUppercase(raw, selectionStart);
+  const end = caretAfterUppercase(raw, selectionEnd);
   return {
-    value,
+    value: raw.toUpperCase(),
     selectionStart: Math.min(start, end),
     selectionEnd: Math.max(start, end),
   };
 }
 
-function clampIndex(index: number | null, length: number): number {
-  if (index === null || Number.isNaN(index)) return length;
-  if (index < 0) return 0;
-  if (index > length) return length;
-  return index;
+function caretAfterUppercase(raw: string, index: number | null): number {
+  if (index === null || Number.isNaN(index)) return raw.toUpperCase().length;
+  const clamped = Math.min(raw.length, Math.max(0, index));
+  return raw.slice(0, clamped).toUpperCase().length;
 }
 
 /** A new room code. `random` returns a number in [0, 1), same as Math.random. */
