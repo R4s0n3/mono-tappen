@@ -6,10 +6,12 @@ import {
   protectedProcedure,
   publicProcedure,
 } from "@/server/api/trpc";
-import { buildRoomState, getRoomCardPool, playableCardWhere } from "@/server/realtime/snapshot";
+import { getRoomCardPool, playableCardWhere } from "@/server/realtime/snapshot";
 import { hub } from "@/server/realtime/hub";
-import { canSkipOrDraw, type CardTransform } from "@/shared/card-transform";
+import { canSkipOrDraw } from "@/shared/card-transform";
 import { logIntent } from "@/server/observability";
+import { joinRoom } from "@/server/rooms/join-room";
+import { roomView } from "@/server/rooms/room-view";
 import type { db as DbClient } from "@/server/db";
 
 /**
@@ -34,7 +36,10 @@ async function generateRoomCode(db: typeof DbClient): Promise<string> {
     const existing = await db.room.findUnique({ where: { code } });
     if (!existing) return code;
   }
-  throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "could not allocate a room code" });
+  throw new TRPCError({
+    code: "INTERNAL_SERVER_ERROR",
+    message: "could not allocate a room code",
+  });
 }
 
 async function resolvePlayer(
@@ -46,22 +51,21 @@ async function resolvePlayer(
     where: { connectionToken: token },
   });
   if (!player || player.roomId !== roomId) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "not a member of this room" });
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "not a member of this room",
+    });
   }
   return player;
 }
 
 function assertStage(player: { role: string }) {
   if (player.role !== "STAGE") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "only the stage can do this" });
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "only the stage can do this",
+    });
   }
-}
-
-async function roomView(roomId: string, role: "STAGE" | "CONTROLLER") {
-  const state = await buildRoomState(roomId, role);
-  if (!state) return null;
-  const cardTransform: CardTransform = hub.getCardTransform(roomId);
-  return { ...state, cardTransform };
 }
 
 export const roomRouter = createTRPCRouter({
@@ -132,7 +136,8 @@ export const roomRouter = createTRPCRouter({
       const host = await ctx.db.player.create({
         data: {
           roomId: room.id,
-          displayName: input.displayName?.trim() ?? (ctx.session?.user.name ?? "Stage"),
+          displayName:
+            input.displayName?.trim() ?? ctx.session?.user.name ?? "Stage",
           role: "STAGE",
           userId,
         },
@@ -143,7 +148,9 @@ export const roomRouter = createTRPCRouter({
         data: { hostId: host.id },
       });
 
-      logIntent(host.roomId, host.id, "room.create", { deckId: deck?.id ?? null });
+      logIntent(host.roomId, host.id, "room.create", {
+        deckId: deck?.id ?? null,
+      });
 
       const state = await roomView(host.roomId, "STAGE");
       return {
@@ -162,58 +169,12 @@ export const roomRouter = createTRPCRouter({
         displayName: z.string().trim().min(1).max(24),
       }),
     )
-    .mutation(async ({ ctx, input }) => {
-      const code = input.code.toUpperCase();
-      const room = await ctx.db.room.findUnique({ where: { code } });
-      if (!room) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "no room with that code" });
-      }
-      if (room.status === "ENDED") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "this room has ended" });
-      }
-
-      const userId = ctx.session?.user.id ?? null;
-
-      // Signed-in users rejoin their existing seat instead of stacking up.
-      if (userId) {
-        const existing = await ctx.db.player.findFirst({
-          where: { roomId: room.id, userId },
-        });
-        if (existing) {
-          logIntent(room.id, existing.id, "room.join.rejoin");
-          await ctx.db.player.update({
-            where: { id: existing.id },
-            data: { isConnected: true, lastSeenAt: new Date() },
-          });
-          const state = await roomView(room.id, existing.role);
-          return {
-            roomId: room.id,
-            token: existing.connectionToken,
-            playerId: existing.id,
-            state,
-          };
-        }
-      }
-
-      const player = await ctx.db.player.create({
-        data: {
-          roomId: room.id,
-          displayName: input.displayName,
-          role: "CONTROLLER",
-          userId,
-        },
+    .mutation(({ ctx, input }) => {
+      return joinRoom(ctx.db, {
+        code: input.code,
+        displayName: input.displayName,
+        userId: ctx.session?.user.id ?? null,
       });
-
-      logIntent(room.id, player.id, "room.join", { code });
-
-      await hub.publish(room.id);
-      const state = await roomView(room.id, "CONTROLLER");
-      return {
-        roomId: room.id,
-        token: player.connectionToken,
-        playerId: player.id,
-        state,
-      };
     }),
 
   /** Full snapshot for the player behind this token (also used on reconnect). */
@@ -230,9 +191,14 @@ export const roomRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const player = await resolvePlayer(ctx.db, input.roomId, input.token);
 
-      const room = await ctx.db.room.findUnique({ where: { id: input.roomId } });
+      const room = await ctx.db.room.findUnique({
+        where: { id: input.roomId },
+      });
       if (!room || room.status === "ENDED") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "room is not active" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "room is not active",
+        });
       }
       if (!canSkipOrDraw(player, room)) {
         throw new TRPCError({
@@ -254,7 +220,10 @@ export const roomRouter = createTRPCRouter({
       }
       const picked = draw[Math.floor(Math.random() * draw.length)];
       if (!picked) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "no card drawn" });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "no card drawn",
+        });
       }
       const cardId = picked;
 
@@ -307,7 +276,9 @@ export const roomRouter = createTRPCRouter({
       const player = await resolvePlayer(ctx.db, input.roomId, input.token);
       assertStage(player);
 
-      const room = await ctx.db.room.findUnique({ where: { id: input.roomId } });
+      const room = await ctx.db.room.findUnique({
+        where: { id: input.roomId },
+      });
       if (!room || room.status === "ENDED") return;
 
       const now = new Date();
@@ -338,16 +309,25 @@ export const roomRouter = createTRPCRouter({
         include: { room: true },
       });
       if (!player || player.roomId !== input.roomId) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "player not in this room" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "player not in this room",
+        });
       }
       if (player.userId) {
         return { claimed: false, reason: "already_claimed" };
       }
       if (player.room.status !== "ENDED") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "room has not ended" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "room has not ended",
+        });
       }
       const windowMs = 7 * 24 * 60 * 60 * 1000;
-      if (!player.room.endedAt || Date.now() - player.room.endedAt.getTime() > windowMs) {
+      if (
+        !player.room.endedAt ||
+        Date.now() - player.room.endedAt.getTime() > windowMs
+      ) {
         return { claimed: false, reason: "window_expired" };
       }
 
@@ -368,17 +348,21 @@ export const roomRouter = createTRPCRouter({
   stats: protectedProcedure.query(async ({ ctx }) => {
     const rooms = await ctx.db.room.findMany({
       where: { status: "ENDED" },
-      select: { createdAt: true, endedAt: true, players: { select: { userId: true } } },
+      select: {
+        createdAt: true,
+        endedAt: true,
+        players: { select: { userId: true } },
+      },
     });
     const durations = rooms
-      .map((r) => (r.endedAt ? r.endedAt.getTime() - r.createdAt.getTime() : null))
+      .map((r) =>
+        r.endedAt ? r.endedAt.getTime() - r.createdAt.getTime() : null,
+      )
       .filter((d): d is number => d !== null)
       .sort((a, b) => a - b);
 
     const medianDuration =
-      durations.length > 0
-        ? durations[Math.floor(durations.length / 2)]
-        : null;
+      durations.length > 0 ? durations[Math.floor(durations.length / 2)] : null;
 
     const playersPerRoom = rooms.map((r) => r.players.length);
     const avgPlayers =
@@ -393,7 +377,9 @@ export const roomRouter = createTRPCRouter({
       where: { room: { status: "ENDED" } },
       select: { userId: true, claimedAt: true },
     });
-    const converted = guests.filter((g) => g.userId !== null && g.claimedAt !== null).length;
+    const converted = guests.filter(
+      (g) => g.userId !== null && g.claimedAt !== null,
+    ).length;
     const conversionRate = guests.length > 0 ? converted / guests.length : null;
 
     return {
