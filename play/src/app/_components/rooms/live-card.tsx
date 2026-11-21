@@ -643,12 +643,12 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(
                 className="card-flip-face card-flip-face-back"
                 aria-hidden={!faceDown}
               >
-                <CardSkinFrame resolved={resolvedSkin}>
-                  <CardBack
-                    fontColor={resolvedSkin.skin.font.color}
-                    pattern={resolvedSkin.pattern}
-                  />
-                </CardSkinFrame>
+                <CardBack
+                  primary={resolvedSkin.skin.background.colors.primary}
+                  secondary={resolvedSkin.skin.background.colors.secondary}
+                  highlight={resolvedSkin.skin.background.colors.highlight}
+                  rarity={resolvedSkin.skin.border.rarity}
+                />
               </div>
             </div>
           </div>

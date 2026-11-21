@@ -1,96 +1,72 @@
 import { useId } from "react";
-import { cardBackTone } from "@/shared/card-back";
-import { TappenMark } from "./mark";
+import { cardBackTone, type CardBackInput } from "@/shared/card-back";
+import { TAPPEN_MARK_PATHS } from "./mark";
 
 /**
- * Branded back. The skin frame supplies the gradient, pattern, and border.
- * This face adds the mark, the wordmark, and a light lattice.
+ * Solid skin color, then the spark. A soft diagonal streak crosses the mark
+ * so it reads as gloss, while the rest of the symbol stays flat.
+ * No words. The equipped skin supplies the colors.
  */
 export function CardBack({
-  fontColor,
-  pattern,
-}: {
-  fontColor: string;
-  pattern: string | null;
-}) {
-  const tone = cardBackTone(fontColor, pattern);
-  const patternId = `tappen-back-${useId().replace(/:/g, "")}`;
+  primary,
+  secondary,
+  highlight,
+  rarity,
+}: CardBackInput) {
+  const tone = cardBackTone({ primary, secondary, highlight, rarity });
+  const rawId = useId().replace(/:/g, "");
+  const maskId = `tappen-mark-${rawId}`;
+  const streakId = `tappen-streak-${rawId}`;
+  const peak = tone.gloss > 0.7 ? 0.9 : 0.62;
 
   return (
     <div
-      className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden text-center"
-      style={{ containerType: "size" }}
+      className="relative h-full w-full overflow-hidden rounded"
+      style={{ backgroundColor: tone.fill }}
     >
       <svg
         aria-hidden
-        className="pointer-events-none absolute inset-0 h-full w-full"
+        viewBox="0 0 250 345"
+        className="absolute inset-0 h-full w-full"
       >
-        <defs>
-          <pattern
-            id={patternId}
-            width="34"
-            height="34"
-            patternUnits="userSpaceOnUse"
-          >
-            <path
-              d="M17 4.5 23.2 17 17 29.5 10.8 17 Z"
-              fill="none"
-              stroke={tone.lattice}
-              strokeWidth="0.8"
-            />
-            <circle cx="17" cy="17" r="1.05" fill={tone.lattice} />
-          </pattern>
-        </defs>
-        <rect
-          width="100%"
-          height="100%"
-          fill={`url(#${patternId})`}
-          opacity={tone.quietLattice ? 0.16 : 0.28}
-        />
+        <svg x="58" y="68" width="134" height="208" viewBox="0 0 267.09 413.73">
+          <defs>
+            <mask id={maskId}>
+              <rect width="267.09" height="413.73" fill="black" />
+              <g fill="white">
+                {TAPPEN_MARK_PATHS.map((d) => (
+                  <path key={d.slice(0, 16)} d={d} />
+                ))}
+              </g>
+            </mask>
+            <linearGradient
+              id={streakId}
+              gradientUnits="userSpaceOnUse"
+              x1="20"
+              y1="70"
+              x2="250"
+              y2="250"
+            >
+              <stop offset="0" stopColor={tone.glossTint} stopOpacity="0" />
+              <stop
+                offset="0.42"
+                stopColor={tone.glossTint}
+                stopOpacity={peak}
+              />
+              <stop
+                offset="0.58"
+                stopColor={tone.glossTint}
+                stopOpacity="0.12"
+              />
+              <stop offset="1" stopColor="#14151f" stopOpacity="0.28" />
+            </linearGradient>
+          </defs>
+          <g mask={`url(#${maskId})`}>
+            <rect width="267.09" height="413.73" fill={tone.symbol} />
+            <rect width="267.09" height="413.73" fill={`url(#${streakId})`} />
+          </g>
+        </svg>
       </svg>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-[0.7rem] rounded-sm border"
-        style={{ borderColor: tone.muted, opacity: 0.45 }}
-      />
-      <div className="relative z-[2] flex w-full flex-col items-center px-[10cqw]">
-        <TappenMark color={tone.ink} className="h-[18cqh] max-h-16 w-auto" />
-        <p
-          className="mt-[2cqh] font-bang uppercase leading-none"
-          style={{
-            color: tone.ink,
-            fontSize: "clamp(1.15rem, 16cqw, 2.6rem)",
-            letterSpacing: "0.14em",
-          }}
-        >
-          Tappen
-        </p>
-        <div
-          aria-hidden
-          className="mt-[2.2cqh] flex w-[68%] max-w-[11rem] items-center gap-2"
-        >
-          <span
-            className="h-px flex-1"
-            style={{ backgroundColor: tone.muted }}
-          />
-          <span className="size-[1.8cqw] min-h-1.5 min-w-1.5 rotate-45 bg-tappen-sunset-500" />
-          <span
-            className="h-px flex-1"
-            style={{ backgroundColor: tone.muted }}
-          />
-        </div>
-        <p
-          className="mt-[2cqh] font-serif leading-snug"
-          style={{
-            color: tone.ink,
-            fontSize: "clamp(0.95rem, 6.4cqw, 1.25rem)",
-          }}
-        >
-          Good questions.
-          <br />
-          Better nights.
-        </p>
-      </div>
     </div>
   );
 }
