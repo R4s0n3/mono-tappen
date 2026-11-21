@@ -28,7 +28,9 @@ export function ControllerView({
         <span className="rounded-full bg-tappen-blue-800 px-4 py-1.5 text-sm font-bold text-tappen-sunset-300">
           {state.deckName}
         </span>
-        <h1 className="font-lilita-one text-3xl text-tappen-blue-50">Waiting for the host…</h1>
+        <h1 className="font-lilita-one text-3xl text-tappen-blue-50">
+          Waiting for the host…
+        </h1>
         <p className="max-w-xs text-tappen-blue-300">
           When the host draws, the card shows up here. Same one as the stage.
         </p>
@@ -54,10 +56,14 @@ export function ControllerView({
     const claimUrl = `/claim?room=${state.roomId}&player=${seat.playerId}`;
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 p-8 text-center text-tappen-blue-100">
-        <h1 className="font-lilita-one text-5xl text-tappen-sunset-400">That&apos;s a wrap</h1>
+        <h1 className="font-lilita-one text-5xl text-tappen-sunset-400">
+          That&apos;s a wrap
+        </h1>
         <p className="max-w-xs text-lg text-tappen-blue-300">
           Good night, {seat.displayName}.
-          {getRuntime().accountActions ? " Want this night to follow you around?" : ""}
+          {getRuntime().accountActions
+            ? " Want this night to follow you around?"
+            : ""}
         </p>
         {getRuntime().accountActions ? (
           <button
@@ -68,7 +74,9 @@ export function ControllerView({
             That was me. Claim it
           </button>
         ) : (
-          <p className="max-w-xs text-tappen-blue-300">Saving this night to an account is coming soon.</p>
+          <p className="max-w-xs text-tappen-blue-300">
+            Saving this night to an account is coming soon.
+          </p>
         )}
       </div>
     );
@@ -108,7 +116,7 @@ export function ControllerView({
       <p className="shrink-0 px-6 pb-[max(1rem,env(safe-area-inset-bottom))] text-sm text-tappen-blue-300">
         {isHost && seat.role === "STAGE"
           ? "You are moving the card."
-          : "Drag the card. Only the host can skip."}
+          : "Drag the card. Only the host can turn it or skip."}
       </p>
     </div>
   );

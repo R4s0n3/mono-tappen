@@ -79,4 +79,46 @@ body {
     -webkit-user-drag: none;
     user-select: none;
 }
+
+/* Room card. The scene holds perspective. Faces are separate planes. */
+.card-flip-scene {
+    perspective: 900px;
+    -webkit-perspective: 900px;
+    perspective-origin: 50% 46%;
+    -webkit-perspective-origin: 50% 46%;
+}
+
+.card-flip-root,
+.card-flip {
+    transform-style: preserve-3d;
+    -webkit-transform-style: preserve-3d;
+}
+
+.card-flip {
+    position: absolute;
+    inset: 0;
+}
+
+.card-flip-face {
+    position: absolute;
+    inset: 0;
+    overflow: visible;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: rotateY(0deg) translateZ(1px);
+    -webkit-transform: rotateY(0deg) translateZ(1px);
+}
+
+.card-flip-face-back {
+    transform: rotateY(180deg) translateZ(1px);
+    -webkit-transform: rotateY(180deg) translateZ(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card-flip,
+    .card-flip-face,
+    .card-flip-face-back {
+        transition: none;
+    }
+}
  

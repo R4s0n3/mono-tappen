@@ -7,6 +7,7 @@ import {
   canSkipOrDraw,
   createRelayState,
   createTransformFanout,
+  dealTransform,
   flyOutTransform,
   HOLD_TIMEOUT_MS,
   isSocketAdvanceEvent,
@@ -16,9 +17,24 @@ import {
   type RelayState,
 } from "./card-transform";
 
-const host = { isHost: true, playerId: "host", displayName: "Stage", role: "STAGE" as const };
-const alex = { isHost: false, playerId: "alex", displayName: "Alex", role: "CONTROLLER" as const };
-const sam = { isHost: false, playerId: "sam", displayName: "Sam", role: "CONTROLLER" as const };
+const host = {
+  isHost: true,
+  playerId: "host",
+  displayName: "Stage",
+  role: "STAGE" as const,
+};
+const alex = {
+  isHost: false,
+  playerId: "alex",
+  displayName: "Alex",
+  role: "CONTROLLER" as const,
+};
+const sam = {
+  isHost: false,
+  playerId: "sam",
+  displayName: "Sam",
+  role: "CONTROLLER" as const,
+};
 
 function pose(overrides: Partial<CardTransform> = {}): CardTransform {
   return {
@@ -38,34 +54,58 @@ function roomState(sequence = 3): RelayState {
 
 describe("canSkipOrDraw", () => {
   it("allows the stage player who is the recorded host", () => {
-    assert.equal(canSkipOrDraw({ id: "host", role: "STAGE" }, { hostId: "host" }), true);
+    assert.equal(
+      canSkipOrDraw({ id: "host", role: "STAGE" }, { hostId: "host" }),
+      true,
+    );
   });
 
   it("allows the stage role when an older room has no host id", () => {
-    assert.equal(canSkipOrDraw({ id: "stage", role: "STAGE" }, { hostId: null }), true);
+    assert.equal(
+      canSkipOrDraw({ id: "stage", role: "STAGE" }, { hostId: null }),
+      true,
+    );
   });
 
   it("rejects a joined player", () => {
-    assert.equal(canSkipOrDraw({ id: "alex", role: "CONTROLLER" }, { hostId: "host" }), false);
+    assert.equal(
+      canSkipOrDraw({ id: "alex", role: "CONTROLLER" }, { hostId: "host" }),
+      false,
+    );
   });
 
   it("rejects a stage seat who is not the recorded host", () => {
-    assert.equal(canSkipOrDraw({ id: "stage", role: "STAGE" }, { hostId: "host" }), false);
+    assert.equal(
+      canSkipOrDraw({ id: "stage", role: "STAGE" }, { hostId: "host" }),
+      false,
+    );
   });
 
   it("rejects a controller even when the host id points at them", () => {
-    assert.equal(canSkipOrDraw({ id: "alex", role: "CONTROLLER" }, { hostId: "alex" }), false);
+    assert.equal(
+      canSkipOrDraw({ id: "alex", role: "CONTROLLER" }, { hostId: "alex" }),
+      false,
+    );
   });
 
   it("rejects a missing player", () => {
     assert.equal(canSkipOrDraw(null, { hostId: "host" }), false);
-    assert.equal(canSkipOrDraw({ id: "", role: "STAGE" }, { hostId: null }), false);
+    assert.equal(
+      canSkipOrDraw({ id: "", role: "STAGE" }, { hostId: null }),
+      false,
+    );
   });
 });
 
 describe("socket skip and draw", () => {
   it("recognizes advance events that the hub ignores", () => {
-    for (const type of ["skip", "draw", "card.skip", "card.draw", "room.advance"]) {
+    for (const type of [
+      "skip",
+      "draw",
+      "card.skip",
+      "card.draw",
+      "room.advance",
+    ]) {
       assert.equal(isSocketAdvanceEvent(type), true);
     }
     assert.equal(isSocketAdvanceEvent("card.transform"), false);
@@ -90,7 +130,12 @@ describe("card holder lock", () => {
     assert.equal(grabbed.kind, "relay");
     if (grabbed.kind !== "relay") return;
 
-    const stolen = acceptCardTransform(sam, pose({ x: 0.2 }), grabbed.state, 1_100);
+    const stolen = acceptCardTransform(
+      sam,
+      pose({ x: 0.2 }),
+      grabbed.state,
+      1_100,
+    );
     assert.equal(stolen.kind, "deny");
     if (stolen.kind !== "deny") return;
     assert.equal(stolen.transform.holderId, "alex");
@@ -104,7 +149,12 @@ describe("card holder lock", () => {
     assert.equal(grabbed.kind, "relay");
     if (grabbed.kind !== "relay") return;
 
-    const swipe = acceptCardTransform(host, flyOutTransform(3, 1, false), grabbed.state, 1_200);
+    const swipe = acceptCardTransform(
+      host,
+      flyOutTransform(3, 1, false),
+      grabbed.state,
+      1_200,
+    );
     assert.equal(swipe.kind, "deny");
     if (swipe.kind !== "deny") return;
     assert.equal(swipe.state.transform?.x, 0.62);
@@ -115,7 +165,12 @@ describe("card holder lock", () => {
     assert.equal(grabbed.kind, "relay");
     if (grabbed.kind !== "relay") return;
 
-    const moved = acceptCardTransform(alex, pose({ x: 0.7, y: 0.6 }), grabbed.state, 1_100);
+    const moved = acceptCardTransform(
+      alex,
+      pose({ x: 0.7, y: 0.6 }),
+      grabbed.state,
+      1_100,
+    );
     assert.equal(moved.kind, "relay");
     if (moved.kind !== "relay") return;
     assert.equal(moved.transform.x, 0.7);
@@ -192,7 +247,12 @@ describe("card holder lock", () => {
     if (grabbed.kind !== "relay") return;
     assert.equal(grabbed.transform.flipped, true);
 
-    const released = acceptCardTransform(alex, pose({ dragging: false, x: 0.9 }), grabbed.state, 1_200);
+    const released = acceptCardTransform(
+      alex,
+      pose({ dragging: false, x: 0.9 }),
+      grabbed.state,
+      1_200,
+    );
     assert.equal(released.kind, "relay");
     if (released.kind !== "relay") return;
     assert.equal(released.transform.flipped, true);
@@ -204,7 +264,12 @@ describe("card holder lock", () => {
     assert.equal(grabbed.kind, "relay");
     if (grabbed.kind !== "relay") return;
 
-    const flown = acceptCardTransform(host, flyOutTransform(3, 1, false), grabbed.state, 1_200);
+    const flown = acceptCardTransform(
+      host,
+      flyOutTransform(3, 1, false),
+      grabbed.state,
+      1_200,
+    );
     assert.equal(flown.kind, "relay");
     if (flown.kind !== "relay") return;
     assert.equal(flown.transform.x, 1.72);
@@ -214,7 +279,12 @@ describe("card holder lock", () => {
   });
 
   it("drops a guest release when that guest does not hold the card", () => {
-    const result = acceptCardTransform(alex, pose({ dragging: false }), roomState(), 1_000);
+    const result = acceptCardTransform(
+      alex,
+      pose({ dragging: false }),
+      roomState(),
+      1_000,
+    );
     assert.equal(result.kind, "drop");
     if (result.kind !== "drop") return;
     assert.equal(result.state.holderId, null);
@@ -225,7 +295,12 @@ describe("card holder lock", () => {
     const grabbed = acceptCardTransform(alex, pose(), roomState(), 1_000);
     assert.equal(grabbed.kind, "relay");
     if (grabbed.kind !== "relay") return;
-    const stale = acceptCardTransform(alex, pose({ sequence: 2 }), grabbed.state, 1_100);
+    const stale = acceptCardTransform(
+      alex,
+      pose({ sequence: 2 }),
+      grabbed.state,
+      1_100,
+    );
     assert.equal(stale.kind, "drop");
     if (stale.kind !== "drop") return;
     assert.equal(stale.state.transform?.x, 0.62);
@@ -237,10 +312,20 @@ describe("card holder lock", () => {
     assert.equal(grabbed.kind, "relay");
     if (grabbed.kind !== "relay") return;
 
-    const tooSoon = acceptCardTransform(sam, pose({ x: 0.3 }), grabbed.state, 5_000 + HOLD_TIMEOUT_MS - 1);
+    const tooSoon = acceptCardTransform(
+      sam,
+      pose({ x: 0.3 }),
+      grabbed.state,
+      5_000 + HOLD_TIMEOUT_MS - 1,
+    );
     assert.equal(tooSoon.kind, "deny");
 
-    const expired = acceptCardTransform(sam, pose({ x: 0.3 }), grabbed.state, 5_000 + HOLD_TIMEOUT_MS);
+    const expired = acceptCardTransform(
+      sam,
+      pose({ x: 0.3 }),
+      grabbed.state,
+      5_000 + HOLD_TIMEOUT_MS,
+    );
     assert.equal(expired.kind, "relay");
     if (expired.kind !== "relay") return;
     assert.equal(expired.transform.holderId, "sam");
@@ -253,7 +338,12 @@ describe("card holder lock", () => {
     assert.equal(grabbed.kind, "relay");
     if (grabbed.kind !== "relay") return;
 
-    const again = acceptCardTransform(alex, pose({ x: 0.4 }), grabbed.state, 5_000 + HOLD_TIMEOUT_MS);
+    const again = acceptCardTransform(
+      alex,
+      pose({ x: 0.4 }),
+      grabbed.state,
+      5_000 + HOLD_TIMEOUT_MS,
+    );
     assert.equal(again.kind, "relay");
     if (again.kind !== "relay") return;
     assert.equal(again.transform.holderId, "alex");
@@ -261,10 +351,20 @@ describe("card holder lock", () => {
   });
 
   it("caps the relay and keeps the newest pose", () => {
-    const first = acceptCardTransform(alex, pose({ x: 0.6 }), roomState(), 1_000);
+    const first = acceptCardTransform(
+      alex,
+      pose({ x: 0.6 }),
+      roomState(),
+      1_000,
+    );
     assert.equal(first.kind, "relay");
     if (first.kind !== "relay") return;
-    const second = acceptCardTransform(alex, pose({ x: 0.81 }), first.state, 1_010);
+    const second = acceptCardTransform(
+      alex,
+      pose({ x: 0.81 }),
+      first.state,
+      1_010,
+    );
     assert.equal(second.kind, "defer");
     if (second.kind !== "defer") return;
     assert.equal(second.state.deferred?.x, 0.81);
@@ -273,7 +373,12 @@ describe("card holder lock", () => {
   });
 
   it("does not let an older turn clear the live holder", () => {
-    const grabbed = acceptCardTransform(alex, pose({ sequence: 4 }), roomState(4), 1_000);
+    const grabbed = acceptCardTransform(
+      alex,
+      pose({ sequence: 4 }),
+      roomState(4),
+      1_000,
+    );
     assert.equal(grabbed.kind, "relay");
     if (grabbed.kind !== "relay") return;
     const rewind = noteRoomSequence(grabbed.state, 3);
@@ -290,6 +395,117 @@ describe("card holder lock", () => {
     assert.equal(next.holderId, null);
     assert.equal(next.transform?.sequence, 4);
     assert.ok((next.transform?.y ?? 0) < 0);
+    assert.equal(next.transform?.flipped, true);
+  });
+
+  it("deals a new card face down and only the host can reveal it", () => {
+    assert.equal(dealTransform(3).flipped, true);
+    const dealt = noteRoomSequence(
+      { ...createRelayState(), dealPending: true },
+      3,
+    );
+    assert.equal(dealt.transform?.flipped, true);
+
+    const dragged = acceptCardTransform(
+      alex,
+      pose({ sequence: 3, flipped: false }),
+      dealt,
+      1_000,
+    );
+    assert.equal(dragged.kind, "relay");
+    if (dragged.kind !== "relay") return;
+    assert.equal(dragged.transform.flipped, true);
+    assert.equal(dragged.transform.x, 0.62);
+
+    const blocked = acceptCardTransform(
+      host,
+      {
+        x: 0.5,
+        y: 0.5,
+        rotation: 0,
+        flipped: false,
+        dragging: false,
+        sequence: 3,
+      },
+      dragged.state,
+      1_100,
+    );
+    assert.equal(blocked.kind, "deny");
+    if (blocked.kind !== "deny") return;
+    assert.equal(blocked.transform.flipped, true);
+    assert.equal(blocked.transform.holderId, "alex");
+
+    const home = acceptCardTransform(
+      alex,
+      pose({ dragging: false, sequence: 3 }),
+      dragged.state,
+      1_200,
+    );
+    assert.equal(home.kind, "relay");
+    if (home.kind !== "relay") return;
+    assert.equal(home.transform.flipped, true);
+    assert.equal(home.transform.x, 0.5);
+
+    const revealed = acceptCardTransform(
+      host,
+      {
+        x: 0.5,
+        y: 0.5,
+        rotation: 0,
+        flipped: false,
+        dragging: false,
+        sequence: 3,
+      },
+      home.state,
+      1_300,
+    );
+    assert.equal(revealed.kind, "relay");
+    if (revealed.kind !== "relay") return;
+    assert.equal(revealed.transform.flipped, false);
+
+    const flown = acceptCardTransform(
+      host,
+      flyOutTransform(3, 1, false),
+      revealed.state,
+      1_400,
+    );
+    assert.equal(flown.kind, "relay");
+    if (flown.kind !== "relay") return;
+    assert.equal(flown.transform.x, 1.72);
+    assert.equal(flown.transform.flipped, false);
+    assert.equal(flown.transform.dragging, false);
+  });
+
+  it("lets the host skip a face down card without turning it over", () => {
+    const dealt = noteRoomSequence(
+      { ...createRelayState(), dealPending: true },
+      5,
+    );
+    const parked = acceptCardTransform(
+      host,
+      {
+        x: 0.5,
+        y: 0.5,
+        rotation: 0,
+        flipped: true,
+        dragging: false,
+        sequence: 5,
+      },
+      dealt,
+      2_000,
+    );
+    assert.equal(parked.kind, "relay");
+    if (parked.kind !== "relay") return;
+    const flown = acceptCardTransform(
+      host,
+      flyOutTransform(5, -1, true),
+      parked.state,
+      2_200,
+    );
+    assert.equal(flown.kind, "relay");
+    if (flown.kind !== "relay") return;
+    assert.equal(flown.transform.flipped, true);
+    assert.equal(flown.transform.x, -0.72);
   });
 });
 
@@ -297,12 +513,7 @@ describe("transform fanout", () => {
   it("broadcasts a rest pose when the holder goes quiet", async () => {
     const fanout = createTransformFanout({ holdTimeoutMs: 40 });
     const seen: CardTransform[] = [];
-    fanout.handle(
-      "room",
-      alex,
-      pose(),
-      (transform) => seen.push(transform),
-    );
+    fanout.handle("room", alex, pose(), (transform) => seen.push(transform));
     assert.equal(seen.length, 1);
     assert.equal(seen[0]?.holderId, "alex");
 
@@ -346,7 +557,13 @@ describe("transform fanout", () => {
     const seen: CardTransform[] = [];
     const relay = (transform: CardTransform) => seen.push(transform);
     fanout.handle("room", alex, pose({ x: 0.6 }), relay, 3_000);
-    const deferred = fanout.handle("room", alex, pose({ x: 0.9 }), relay, 3_010);
+    const deferred = fanout.handle(
+      "room",
+      alex,
+      pose({ x: 0.9 }),
+      relay,
+      3_010,
+    );
     assert.equal(deferred.kind, "defer");
     fanout.releaseHolder("room", "alex", relay, 3_020);
     assert.equal(seen.at(-1)?.x, 0.5);
@@ -354,6 +571,9 @@ describe("transform fanout", () => {
     const count = seen.length;
     await new Promise((resolve) => setTimeout(resolve, 50));
     assert.equal(seen.length, count);
-    assert.equal(seen.some((transform) => transform.x === 0.9), false);
+    assert.equal(
+      seen.some((transform) => transform.x === 0.9),
+      false,
+    );
   });
 });

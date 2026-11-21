@@ -56,7 +56,9 @@ function PlayerList({ state, seat }: { state: RoomState; seat: Seat }) {
               }`}
             />
             {p.displayName}
-            {p.role === "STAGE" && <span className="text-xs opacity-70">stage</span>}
+            {p.role === "STAGE" && (
+              <span className="text-xs opacity-70">stage</span>
+            )}
           </li>
         );
       })}
@@ -85,6 +87,7 @@ export function StageView({
   const [drawError, setDrawError] = useState<string | null>(null);
   const intro = useDealIntro(state.status);
   const cardRef = useRef<LiveCardHandle>(null);
+  const [faceDown, setFaceDown] = useState(() => socket.getTransform().flipped);
   const isHost = isHostSeat(state, seat);
 
   const advance = api.room.advance.useMutation({
@@ -129,7 +132,10 @@ export function StageView({
         <h1 className="font-lilita-one text-4xl text-tappen-blue-50">Lobby</h1>
         <CopyCode code={state.code} />
         <p className="text-tappen-blue-300">
-          Playing <span className="font-bold text-tappen-sunset-300">{state.deckName}</span>
+          Playing{" "}
+          <span className="font-bold text-tappen-sunset-300">
+            {state.deckName}
+          </span>
         </p>
         <PlayerList state={state} seat={seat} />
         {drawErrorNotice}
@@ -148,7 +154,9 @@ export function StageView({
   if (state.status === "ENDED") {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 p-8 text-center text-tappen-blue-100">
-        <h1 className="font-lilita-one text-5xl text-tappen-sunset-400">That&apos;s a wrap</h1>
+        <h1 className="font-lilita-one text-5xl text-tappen-sunset-400">
+          That&apos;s a wrap
+        </h1>
         <p className="max-w-md text-lg text-tappen-blue-300">
           {getRuntime().accountActions
             ? "Every guest who wants their name on tonight's game should open the app once more and claim their seat."
@@ -199,6 +207,7 @@ export function StageView({
           intro={intro}
           socket={socket}
           onAdvance={requestAdvance}
+          onFaceDown={setFaceDown}
         />
       ) : (
         <p className="flex flex-1 items-center justify-center text-tappen-blue-300">
@@ -212,7 +221,9 @@ export function StageView({
         {isHost && state.turn && (
           <>
             <p className="text-xs uppercase tracking-widest text-tappen-blue-300">
-              drag · tap to flip · swipe for the next card
+              {faceDown
+                ? "drag · tap to reveal · swipe for the next card"
+                : "drag · tap to flip · swipe for the next card"}
             </p>
             <button
               type="button"
