@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { getRuntime } from "@/client/runtime";
 import type { CardSocket, RoomState, Seat } from "./types";
 import { LiveCard, useDealIntro } from "./live-card";
+import { RoomCodePill } from "./room-code-pill";
 
 /**
  * Phones show the same card as the stage, full text included. A joined player
@@ -85,15 +86,18 @@ export function ControllerView({
   // ACTIVE. Guests drag the card. The host is the only one who can skip.
   return (
     <div className="flex h-dvh flex-col overflow-hidden overscroll-none bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 text-center text-tappen-blue-100">
-      <div className="flex shrink-0 items-center justify-center gap-2 px-4 pb-1 pt-[max(1.25rem,env(safe-area-inset-top))]">
-        <span className="rounded-full bg-tappen-blue-800 px-4 py-1.5 text-sm font-bold text-tappen-sunset-300">
-          {state.deckName}
-          {state.turn ? ` · turn ${state.turn.sequence}` : ""}
-        </span>
-        <span className="flex items-center gap-1.5 rounded-full bg-tappen-blue-800 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-tappen-blue-200">
-          <span className="size-1.5 animate-pulse rounded-full bg-tappen-green-400" />
-          live
-        </span>
+      <div className="grid shrink-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 pb-1 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(1.25rem,env(safe-area-inset-top))]">
+        <RoomCodePill code={state.code} />
+        <div className="flex min-w-0 items-center justify-center gap-2 px-1">
+          <span className="max-w-full truncate rounded-full bg-tappen-blue-800 px-4 py-1.5 text-sm font-bold text-tappen-sunset-300">
+            {state.deckName}
+            {state.turn ? ` · turn ${state.turn.sequence}` : ""}
+          </span>
+          <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-tappen-blue-800 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-tappen-blue-200">
+            <span className="size-1.5 animate-pulse rounded-full bg-tappen-green-400" />
+            live
+          </span>
+        </div>
       </div>
       {state.turn ? (
         <LiveCard
