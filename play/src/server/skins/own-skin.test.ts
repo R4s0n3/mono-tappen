@@ -411,4 +411,11 @@ describe("own skin migration", () => {
     assert.match(playSchema, /model OwnSkin \{/);
     assert.match(playSchema, /model OwnSkinEquip \{/);
   });
+
+  it("keeps the own skin module identical in hub and play", () => {
+    const playModule = fs.readFileSync(path.join(repo, "play/src/shared/own-skin.js"), "utf8");
+    const hubModule = fs.readFileSync(path.join(repo, "hub/src/shared/own-skin.js"), "utf8");
+    assert.equal(playModule, hubModule);
+    assert.match(playModule, /export function parseOwnSkinConfig/);
+  });
 });

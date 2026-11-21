@@ -1,4 +1,6 @@
 // @ts-check
+// Copied in play/src/shared/own-skin.js and hub/src/shared/own-skin.js.
+// Coolify builds each app from its own folder, so these copies stay identical.
 /**
  * Own skins: the account-level looks the Premium skin builder saves.
  *
