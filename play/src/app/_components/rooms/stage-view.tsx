@@ -169,7 +169,7 @@ export function StageView({
     );
   }
 
-  // ACTIVE — the host moves the card; everyone else mirrors it.
+  // ACTIVE. The host can skip. Anyone in the room can drag the card.
   return (
     <div className="flex h-dvh flex-col overflow-hidden overscroll-none bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 text-tappen-blue-100">
       <div className="flex w-full shrink-0 items-center justify-between gap-4 px-4 pb-2 pt-[max(1.25rem,env(safe-area-inset-top))]">
@@ -193,8 +193,9 @@ export function StageView({
           skinId={state.turn.skinId}
           playSkin={state.turn.playSkin}
           sequence={state.turn.sequence}
-          interactive={isHost}
+          canDrag
           canAdvance={isHost}
+          playerId={seat.playerId}
           intro={intro}
           socket={socket}
           onAdvance={requestAdvance}

@@ -14,8 +14,9 @@ export type RoomPlayer = {
 };
 
 /**
- * Stage and controllers see the same card face. `cardTransform` is the host's
- * latest ephemeral pose (not stored). Anonymous-queue fields are never present.
+ * Stage and controllers see the same card face. `cardTransform` is the latest
+ * ephemeral pose (not stored), including who is holding the card.
+ * Anonymous-queue fields are never present.
  */
 export type RoomState = {
   roomId: string;

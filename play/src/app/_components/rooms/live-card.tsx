@@ -1,8 +1,10 @@
 "use client";
 
-import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
 import {
   dealTransform,
+  DRAG_Y_MAX,
+  DRAG_Y_MIN,
   flyOutTransform,
   restTransform,
   SWIPE_THRESHOLD,
@@ -14,8 +16,7 @@ import { CardFace, CardFooterFrame, cardFooterLabelClass } from "../tappen-card/
 import type { CardSocket, RoomStatus } from "./types";
 
 const SEND_INTERVAL_MS = 32;
-const DRAG_Y_MIN = 0.18;
-const DRAG_Y_MAX = 0.82;
+const HOLD_KEEPALIVE_MS = 1000;
 
 export type LiveCardHandle = {
   swipeAway: (direction?: 1 | -1) => void;
@@ -26,8 +27,11 @@ type LiveCardProps = {
   skinId: string;
   playSkin?: PlaySkin | null;
   sequence: number;
-  interactive: boolean;
+  /** This seat may grab the card. Skip and draw are separate. */
+  canDrag: boolean;
+  /** Host only. Swipe, flip, and the next-card button. */
   canAdvance: boolean;
+  playerId: string;
   intro: boolean;
   socket: CardSocket;
   onAdvance: () => Promise<void>;
@@ -70,12 +74,13 @@ export function useDealIntro(status: RoomStatus) {
 }
 
 export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveCard(
-  { content, skinId, playSkin, sequence, interactive, canAdvance, intro, socket, onAdvance },
+  { content, skinId, playSkin, sequence, canDrag, canAdvance, playerId, intro, socket, onAdvance },
   ref,
 ) {
   const areaRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [holding, setHolding] = useState(false);
+  const [heldByName, setHeldByName] = useState<string | null>(null);
 
   const socketRef = useRef(socket);
   socketRef.current = socket;
@@ -83,10 +88,15 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
   onAdvanceRef.current = onAdvance;
   const sequenceRef = useRef(sequence);
   sequenceRef.current = sequence;
-  const interactiveRef = useRef(interactive);
-  interactiveRef.current = interactive;
+  const canDragRef = useRef(canDrag);
+  canDragRef.current = canDrag;
   const canAdvanceRef = useRef(canAdvance);
   canAdvanceRef.current = canAdvance;
+  const playerIdRef = useRef(playerId);
+  playerIdRef.current = playerId;
+  const heldByOtherRef = useRef(false);
+  const heldLabelRef = useRef<string | null>(null);
+  const releasePendingRef = useRef(false);
 
   const initial = socket.getTransform();
   const targetRef = useRef<CardTransform>(initial);
@@ -103,14 +113,16 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
   const committing = useRef(false);
   const epoch = useRef(0);
   const wakeRef = useRef<() => void>(() => undefined);
-  const publishRef = useRef<(pose: CardTransform) => void>(() => undefined);
+  const publishRef = useRef<(pose: CardTransform, sendToRoom?: boolean) => void>(() => undefined);
   const commitSwipeRef = useRef<(direction: 1 | -1) => Promise<void>>(async () => undefined);
+  const cancelKind = useRef<"turn" | "lock" | null>(null);
 
   const grab = useRef({ x: 0, y: 0 });
   const origin = useRef({ x: 0, y: 0 });
   const queued = useRef<CardTransform | null>(null);
   const sendRaf = useRef(0);
   const lastSent = useRef(0);
+  const keepaliveRef = useRef(0);
 
   useLayoutEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -140,8 +152,11 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
       last = now;
       const target = targetRef.current;
       const display = displayRef.current;
-      const hostSnap = interactiveRef.current && !reduce;
-      const follow = hostSnap ? 1 : 1 - Math.exp(-dt / (target.dragging ? 40 : 120));
+      // The player who is actually moving the card paints that pose immediately.
+      // Everyone else eases toward the latest broadcast, including the host
+      // while a guest is holding the card.
+      const localSource = (controlling.current || dragging.current) && !reduce;
+      const follow = localSource ? 1 : 1 - Math.exp(-dt / (target.dragging ? 40 : 120));
       display.x += (target.x - display.x) * follow;
       display.y += (target.y - display.y) * follow;
       display.rotation += (target.rotation - display.rotation) * follow;
@@ -173,14 +188,54 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
     };
   }, []);
 
+  const stopKeepalive = useCallback(() => {
+    if (!keepaliveRef.current) return;
+    clearInterval(keepaliveRef.current);
+    keepaliveRef.current = 0;
+  }, []);
+
+  const noteHolder = useCallback((transform: CardTransform) => {
+    const incoming = transform.holderId ?? null;
+    const mine = playerIdRef.current;
+    const other = incoming != null && incoming !== mine;
+    heldByOtherRef.current = other;
+    const trimmed = transform.holderName?.trim() ?? "";
+    const label = other ? (trimmed.length > 0 ? trimmed : "A player") : null;
+    if (label === heldLabelRef.current) return;
+    heldLabelRef.current = label;
+    setHeldByName(label);
+  }, []);
+
   useEffect(() => {
     return socket.subscribeTransform(({ transform, snap }) => {
-      // The host is the source of the pose. Echoes would fight the finger.
-      // A new turn still snaps so the deal-in starts in the same place.
-      if (interactiveRef.current && !snap) return;
-      if (snap) {
-        const sequenceChanged = transform.sequence !== targetRef.current.sequence;
-        if (sequenceChanged) epoch.current += 1;
+      const mine = playerIdRef.current;
+      const incomingHolder = transform.holderId ?? null;
+      const sequenceChanged = snap && transform.sequence !== targetRef.current.sequence;
+      const otherHolder = incomingHolder != null && incomingHolder !== mine;
+      const releaseAck =
+        releasePendingRef.current && !transform.dragging && incomingHolder == null;
+      if (releaseAck || sequenceChanged || otherHolder) {
+        releasePendingRef.current = false;
+      }
+      // A quiet hold expires on the server. A release echo is not that: the
+      // next grab waits until this one is acknowledged, so a late echo cannot
+      // cancel a newer finger.
+      const serverReleased =
+        dragging.current && !transform.dragging && incomingHolder == null;
+
+      if (sequenceChanged || otherHolder || serverReleased) {
+        cancelKind.current = sequenceChanged ? "turn" : "lock";
+        epoch.current += 1;
+        dragging.current = false;
+        controlling.current = false;
+        setHolding(false);
+        stopKeepalive();
+      }
+
+      const stillSource = controlling.current || dragging.current;
+      if (stillSource && !sequenceChanged) return;
+
+      if (snap || sequenceChanged) {
         const display = displayRef.current;
         display.x = transform.x;
         display.y = transform.y;
@@ -189,9 +244,10 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
         paintRef.current(displayRef.current);
       }
       targetRef.current = transform;
+      noteHolder(transform);
       wakeRef.current();
     });
-  }, [socket]);
+  }, [noteHolder, socket, stopKeepalive]);
 
   useEffect(() => {
     const block = (event: TouchEvent) => {
@@ -203,13 +259,17 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
     return () => {
       window.removeEventListener("touchmove", block);
       window.removeEventListener("resize", onResize);
+      if (keepaliveRef.current) {
+        clearInterval(keepaliveRef.current);
+        keepaliveRef.current = 0;
+      }
     };
   }, []);
 
-  const publish = (pose: CardTransform) => {
+  const publish = (pose: CardTransform, sendToRoom = true) => {
     targetRef.current = pose;
     wakeRef.current();
-    if (!interactiveRef.current) return;
+    if (!sendToRoom) return;
     queued.current = pose;
     if (sendRaf.current) return;
 
@@ -239,7 +299,13 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
   };
   publishRef.current = publish;
 
-  const animate = (from: CardTransform, to: CardTransform, ms: number, token: number) => {
+  const animate = (
+    from: CardTransform,
+    to: CardTransform,
+    ms: number,
+    token: number,
+    sendToRoom: boolean,
+  ) => {
     return new Promise<void>((resolve) => {
       const started = performance.now();
       const step = (now: number) => {
@@ -248,7 +314,7 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
           return;
         }
         const p = Math.min(1, (now - started) / ms);
-        publishRef.current(lerp(from, to, easeOut(p)));
+        publishRef.current(lerp(from, to, easeOut(p)), sendToRoom);
         if (p < 1) requestAnimationFrame(step);
         else resolve();
       };
@@ -256,7 +322,8 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
     });
   };
 
-  const springBack = async () => {
+  const springBack = async (sendToRoom: boolean) => {
+    releasePendingRef.current = true;
     const token = ++epoch.current;
     controlling.current = true;
     const from = { ...targetRef.current, dragging: false };
@@ -265,7 +332,13 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
       flipped: from.flipped,
       dragging: false,
     };
-    await animate(from, to, 260, token);
+    if (sendToRoom) {
+      await animate(from, to, 260, token, true);
+    } else {
+      // One release. The server parks the card at rest for everyone else.
+      publish(from, true);
+      await animate(from, to, 260, token, false);
+    }
     if (epoch.current === token) controlling.current = false;
   };
 
@@ -275,7 +348,7 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
     const seq = sequenceRef.current;
     const from = dealTransform(seq);
     const to = restTransform(seq);
-    void animate(from, to, 520, token).then(() => {
+    void animate(from, to, 520, token, true).then(() => {
       if (epoch.current === token) controlling.current = false;
     });
   };
@@ -283,22 +356,28 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
   const commitSwipe = async (direction: 1 | -1) => {
     if (committing.current) return;
     if (!canAdvanceRef.current) {
-      await springBack();
+      await springBack(false);
       return;
     }
     committing.current = true;
+    cancelKind.current = null;
     const token = ++epoch.current;
     controlling.current = true;
     const from = { ...targetRef.current, dragging: false };
     const to = flyOutTransform(sequenceRef.current, direction, from.flipped);
     try {
-      await animate(from, to, 320, token);
-      if (epoch.current !== token) return;
+      await animate(from, to, 320, token, true);
+      if (epoch.current !== token) {
+        // A guest still holding the card can interrupt the fly-out.
+        // The button and the swipe still draw, because only the host got here.
+        if (cancelKind.current === "lock") await onAdvanceRef.current();
+        return;
+      }
       await onAdvanceRef.current();
     } catch {
       if (epoch.current === token) {
         committing.current = false;
-        await springBack();
+        await springBack(true);
       }
     } finally {
       committing.current = false;
@@ -315,7 +394,7 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
 
   const seenSequence = useRef<number | undefined>(undefined);
   useEffect(() => {
-    if (!interactive) return;
+    if (!canAdvance) return;
     const prev = seenSequence.current;
     seenSequence.current = sequence;
     if (prev === undefined) {
@@ -325,7 +404,7 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
     if (prev !== sequence) runDeal();
     // runDeal is recreated each render and only uses refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interactive, intro, sequence]);
+  }, [canAdvance, intro, sequence]);
 
   const pointFrom = (event: { clientX: number; clientY: number }) => {
     const rect = areaRef.current?.getBoundingClientRect();
@@ -337,7 +416,15 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
   };
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!interactiveRef.current || committing.current || event.button !== 0) return;
+    if (
+      !canDragRef.current ||
+      heldByOtherRef.current ||
+      releasePendingRef.current ||
+      committing.current ||
+      event.button !== 0
+    ) {
+      return;
+    }
     const point = pointFrom(event);
     if (!point) return;
     epoch.current += 1;
@@ -350,6 +437,13 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
     grab.current = { x: pose.x - point.x, y: pose.y - point.y };
     lastSent.current = 0;
     publish({ ...pose, dragging: true, sequence: sequenceRef.current });
+    stopKeepalive();
+    // A still finger keeps the lock. The server releases it if these stop.
+    keepaliveRef.current = window.setInterval(() => {
+      if (!dragging.current) return;
+      const current = targetRef.current;
+      publish({ ...current, dragging: true, sequence: sequenceRef.current });
+    }, HOLD_KEEPALIVE_MS);
   };
 
   const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -372,12 +466,19 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
     if (!dragging.current) return;
     dragging.current = false;
     setHolding(false);
+    stopKeepalive();
     const pose = targetRef.current;
+    // Guests can move the card, then it returns home. A fling is not a skip.
+    if (!canAdvanceRef.current) {
+      void springBack(false);
+      return;
+    }
     const startX = origin.current.x + grab.current.x;
     const startY = origin.current.y + grab.current.y;
     const moved = Math.hypot(pose.x - startX, pose.y - startY);
     if (moved < 0.035) {
       const home = restTransform(sequenceRef.current);
+      releasePendingRef.current = true;
       publish({ ...home, flipped: !pose.flipped, dragging: false });
       controlling.current = false;
       return;
@@ -390,7 +491,7 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
       void commitSwipe(-1);
       return;
     }
-    void springBack();
+    void springBack(true);
   };
 
   return (
@@ -402,13 +503,13 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
       <div
         ref={cardRef}
         className={`absolute left-0 top-0 aspect-[5/6.9] select-none [transform-style:preserve-3d] ${
-          interactive ? (holding ? "cursor-grabbing" : "cursor-grab") : ""
+          canDrag && !heldByName ? (holding ? "cursor-grabbing" : "cursor-grab") : ""
         } ${holding ? "shadow-[0_28px_50px_rgba(0,0,0,0.45)]" : "shadow-[0_18px_36px_rgba(0,0,0,0.35)]"}`}
         style={{ touchAction: "none", WebkitTouchCallout: "none", willChange: "transform" }}
-        onPointerDown={interactive ? onPointerDown : undefined}
-        onPointerMove={interactive ? onPointerMove : undefined}
-        onPointerUp={interactive ? endDrag : undefined}
-        onPointerCancel={interactive ? endDrag : undefined}
+        onPointerDown={canDrag ? onPointerDown : undefined}
+        onPointerMove={canDrag ? onPointerMove : undefined}
+        onPointerUp={canDrag ? endDrag : undefined}
+        onPointerCancel={canDrag ? endDrag : undefined}
       >
         <CardSkin skinId={skinId} playSkin={playSkin}>
           <div className="relative size-full [transform-style:preserve-3d]">
@@ -432,6 +533,14 @@ export const LiveCard = forwardRef<LiveCardHandle, LiveCardProps>(function LiveC
           </div>
         </CardSkin>
       </div>
+      {heldByName ? (
+        <p
+          aria-live="polite"
+          className="pointer-events-none absolute inset-x-0 bottom-2 text-center text-xs font-semibold text-tappen-blue-100"
+        >
+          {heldByName} is holding
+        </p>
+      ) : null}
     </div>
   );
 });
