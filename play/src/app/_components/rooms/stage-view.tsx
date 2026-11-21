@@ -7,6 +7,7 @@ import { api } from "@/trpc/react";
 import type { CardSocket, RoomState, Seat } from "./types";
 import { forgetSeat } from "./seat";
 import { LiveCard, useDealIntro, type LiveCardHandle } from "./live-card";
+import { RoomCodePill } from "./room-code-pill";
 
 function CopyCode({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
@@ -56,7 +57,9 @@ function PlayerList({ state, seat }: { state: RoomState; seat: Seat }) {
               }`}
             />
             {p.displayName}
-            {p.role === "STAGE" && <span className="text-xs opacity-70">stage</span>}
+            {p.role === "STAGE" && (
+              <span className="text-xs opacity-70">stage</span>
+            )}
           </li>
         );
       })}
@@ -129,7 +132,10 @@ export function StageView({
         <h1 className="font-lilita-one text-4xl text-tappen-blue-50">Lobby</h1>
         <CopyCode code={state.code} />
         <p className="text-tappen-blue-300">
-          Playing <span className="font-bold text-tappen-sunset-300">{state.deckName}</span>
+          Playing{" "}
+          <span className="font-bold text-tappen-sunset-300">
+            {state.deckName}
+          </span>
         </p>
         <PlayerList state={state} seat={seat} />
         {drawErrorNotice}
@@ -148,7 +154,9 @@ export function StageView({
   if (state.status === "ENDED") {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 p-8 text-center text-tappen-blue-100">
-        <h1 className="font-lilita-one text-5xl text-tappen-sunset-400">That&apos;s a wrap</h1>
+        <h1 className="font-lilita-one text-5xl text-tappen-sunset-400">
+          That&apos;s a wrap
+        </h1>
         <p className="max-w-md text-lg text-tappen-blue-300">
           {getRuntime().accountActions
             ? "Every guest who wants their name on tonight's game should open the app once more and claim their seat."
@@ -172,15 +180,18 @@ export function StageView({
   // ACTIVE. The host can skip. Anyone in the room can drag the card.
   return (
     <div className="flex h-dvh flex-col overflow-hidden overscroll-none bg-gradient-to-b from-tappen-blue-500 to-tappen-blue-700 text-tappen-blue-100">
-      <div className="flex w-full shrink-0 items-center justify-between gap-4 px-4 pb-2 pt-[max(1.25rem,env(safe-area-inset-top))]">
-        <span className="rounded-full bg-tappen-blue-800 px-4 py-1.5 text-sm font-bold text-tappen-sunset-300">
-          {state.deckName} · turn {state.turn?.sequence ?? "?"}
-        </span>
+      <div className="grid w-full shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 pb-2 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(1.25rem,env(safe-area-inset-top))]">
+        <RoomCodePill code={state.code} />
+        <div className="flex min-w-0 justify-center px-1">
+          <span className="max-w-full truncate rounded-full bg-tappen-blue-800 px-4 py-1.5 text-sm font-bold text-tappen-sunset-300">
+            {state.deckName} · turn {state.turn?.sequence ?? "?"}
+          </span>
+        </div>
         <button
           type="button"
           onClick={handleEnd}
           disabled={busy}
-          className="rounded-full bg-tappen-blue-800 px-4 py-1.5 text-sm font-bold text-tappen-blue-300 transition hover:text-tappen-sunset-400 disabled:opacity-40"
+          className="shrink-0 rounded-full bg-tappen-blue-800 px-4 py-1.5 text-sm font-bold text-tappen-blue-300 transition hover:text-tappen-sunset-400 disabled:opacity-40"
         >
           End night
         </button>
