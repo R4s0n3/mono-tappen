@@ -13,26 +13,15 @@ import { logIntent } from "@/server/observability";
 import { joinRoom } from "@/server/rooms/join-room";
 import { roomView } from "@/server/rooms/room-view";
 import type { db as DbClient } from "@/server/db";
+import { randomRoomCode } from "@/shared/room-code";
 
 /**
- * Join codes: 6 chars from an alphabet with no visually confusable
- * characters (0/O, 1/I/L removed). Stored and queried in uppercase so the
- * case-sensitive Postgres unique index matches a code a player types.
+ * Join codes come from an uppercase alphabet with no visually confusable
+ * characters. Lookup trims and uppercases before the unique index read.
  */
-const CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
-const CODE_LENGTH = 6;
-
-function randomCode(): string {
-  let code = "";
-  for (let i = 0; i < CODE_LENGTH; i++) {
-    code += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
-  }
-  return code;
-}
-
 async function generateRoomCode(db: typeof DbClient): Promise<string> {
   for (let attempt = 0; attempt < 10; attempt++) {
-    const code = randomCode();
+    const code = randomRoomCode();
     const existing = await db.room.findUnique({ where: { code } });
     if (!existing) return code;
   }
@@ -165,7 +154,7 @@ export const roomRouter = createTRPCRouter({
   join: publicProcedure
     .input(
       z.object({
-        code: z.string().trim().min(1).max(12),
+        code: z.string().trim().toUpperCase().min(1).max(12),
         displayName: z.string().trim().min(1).max(24),
       }),
     )

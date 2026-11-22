@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { logIntent } from "@/server/observability";
 import { joinRefusalMessage } from "@/server/rooms/join-policy";
 import { hub, roomView } from "@/server/rooms/room-view";
+import { normalizeRoomCode } from "@/shared/room-code";
 
 /**
  * Join by room code. An active round stays open. The returned snapshot is
@@ -13,7 +14,7 @@ export async function joinRoom(
   db: PrismaClient,
   input: { code: string; displayName: string; userId: string | null },
 ) {
-  const code = input.code.toUpperCase();
+  const code = normalizeRoomCode(input.code);
   const room = await db.room.findUnique({ where: { code } });
   if (!room) {
     throw new TRPCError({
