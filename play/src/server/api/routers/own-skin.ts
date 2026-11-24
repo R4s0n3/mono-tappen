@@ -10,6 +10,7 @@ import {
   listOwnSkins,
   ownSkinTrpcError,
   readEquippedOwnSkin,
+  unequipOwnSkin,
   updateOwnSkin,
 } from "@/shared/own-skin";
 
@@ -22,7 +23,7 @@ function fail(error: unknown): never {
 }
 
 /**
- * Own skins. list, create, update, delete, and equip require Premium
+ * Own skins. list, create, update, delete, equip, and unequip require Premium
  * (`Subscription.status === "active"`). `equipped` is the render read:
  * an account that already saved a look can still show it.
  */
@@ -74,6 +75,14 @@ export const ownSkinRouter = createTRPCRouter({
   equip: protectedProcedure.input(idInput).mutation(async ({ ctx, input }) => {
     try {
       return await equipOwnSkin(bindPrismaOwnSkinStore(ctx.db), ctx.session.user.id, input.id);
+    } catch (error) {
+      fail(error);
+    }
+  }),
+
+  unequip: protectedProcedure.mutation(async ({ ctx }) => {
+    try {
+      return await unequipOwnSkin(bindPrismaOwnSkinStore(ctx.db), ctx.session.user.id);
     } catch (error) {
       fail(error);
     }

@@ -50,7 +50,10 @@ export default async function Home({ searchParams }: { searchParams: { mode: str
           </div>
         ) : null}
         <span className="text-xs uppercase">join</span>
-        <Link href="https://hub.tappen.app" className="text-sm font-bold z-50">Tappen Hub</Link>
+        <div className="flex gap-4">
+          <Link href="/skins" className="text-sm font-bold z-50">Skins</Link>
+          <Link href="https://hub.tappen.app" className="text-sm font-bold z-50">Tappen Hub</Link>
+        </div>
       </footer>
     </main>
   );

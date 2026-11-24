@@ -26,6 +26,7 @@ import {
   readEquippedOwnSkin,
   renderOwnSkin,
   renderStoredOwnSkin,
+  unequipOwnSkin,
   updateOwnSkin,
   type OwnSkinConfig,
   type OwnSkinStore,
@@ -131,6 +132,9 @@ function createMemory(users: Record<string, string | null>) {
     },
     async setEquipped(userId, skinId) {
       equipped.set(userId, skinId);
+    },
+    async clearEquipped(userId) {
+      equipped.delete(userId);
     },
   };
 
@@ -271,6 +275,11 @@ describe("own skin rules", () => {
     assert.equal(playing?.playSkin.background.colors.primary, OWN_SKIN_PALETTES.ink?.primary);
     assert.equal((await listOwnSkins(memory.store, "ada")).skins[0]?.equipped, true);
 
+    assert.deepEqual(await unequipOwnSkin(memory.store, "ada"), { equippedId: null });
+    assert.equal(await readEquippedOwnSkin(memory.store, "ada"), null);
+    assert.equal((await listOwnSkins(memory.store, "ada")).skins[0]?.name, "Table sunset");
+    assert.equal(cardFaceSkin("catalog-skin", null).source, "catalog");
+
     assert.deepEqual(await deleteOwnSkin(memory.store, "ada", created.id), { deleted: true });
     assert.equal(await readEquippedOwnSkin(memory.store, "ada"), null);
     assert.equal(memory.skins.length, 0);
@@ -295,6 +304,7 @@ describe("own skin rules", () => {
       );
       await assert.rejects(deleteOwnSkin(memory.store, "ada", created.id), (error: unknown) => rejected(error).code === "PREMIUM");
       await assert.rejects(equipOwnSkin(memory.store, "ada", created.id), (error: unknown) => rejected(error).code === "PREMIUM");
+      await assert.rejects(unequipOwnSkin(memory.store, "ada"), (error: unknown) => rejected(error).code === "PREMIUM");
     }
 
     const playing = await readEquippedOwnSkin(memory.store, "ada");

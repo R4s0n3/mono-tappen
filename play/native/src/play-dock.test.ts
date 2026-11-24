@@ -35,4 +35,19 @@ describe("native play dock", () => {
     assert.match(cards, /previous: goBack/);
     assert.match(cards, /swipe\("right"\)/);
   });
+
+  it("opens the skin builder without a shop or checkout link", () => {
+    const screens = fs.readFileSync(path.join(nativeRoot, "src/screens.tsx"), "utf8");
+    const screen = fs.readFileSync(path.join(nativeRoot, "src/screens/skins.tsx"), "utf8");
+    const home = fs.readFileSync(path.join(nativeRoot, "src/screens/home.tsx"), "utf8");
+    const account = fs.readFileSync(path.join(nativeRoot, "src/screens/account.tsx"), "utf8");
+    const builder = fs.readFileSync(path.join(playRoot, "src/app/_components/skin-builder/skin-builder.tsx"), "utf8");
+    assert.match(screens, /path: "\/skins"/);
+    assert.match(screen, /SkinBuilder/);
+    assert.match(home, /to="\/skins"/);
+    assert.match(account, /to="\/skins"/);
+    for (const source of [screen, home, account, builder]) {
+      assert.doesNotMatch(source, /stripe|checkout|hub\.tappen|shop\/subscribe/i);
+    }
+  });
 });

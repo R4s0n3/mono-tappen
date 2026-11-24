@@ -29,7 +29,13 @@ type CardSkinProps = {
     children: React.ReactNode,
     skinId?: string,
     skinObject?: CardSkinItem,
-    enableTilt?: boolean
+    enableTilt?: boolean,
+    /** Own-skin pattern. Shop cards leave this empty. */
+    overlay?: {
+        backgroundImage: string,
+        backgroundSize: string,
+        opacity: number,
+    } | null
 }
 
 export const defaultSkin: CardSkinItem = {
@@ -67,7 +73,7 @@ function createDynamicBackgroundStyle(styleObj: CardSkinItem['background']) {
 
 // Memoized CardSkin component
 const CardSkin = memo(function CardSkin(props: CardSkinProps) {
-    const { children, skinId, skinObject, enableTilt = true } = props
+    const { children, skinId, skinObject, enableTilt = true, overlay = null } = props
 
     // Query with optimized options
     const { data: fetchedSkin } = api.skin.getStyle.useQuery(skinId ?? "", {
@@ -123,7 +129,14 @@ const CardSkin = memo(function CardSkin(props: CardSkinProps) {
             className={`size-full relative overflow-hidden rounded p-1 md:p-2 ${outterClasses.join(" ")} ${enableTilt ? 'holo-card' : ''}`}
             onMouseLeave={enableTilt ? tiltApi.reset : undefined}
         >
-            <div className={`skin-border ${innerClasses.join(" ")} w-full h-full p-2 lg:gap-6`}>
+            {overlay ? (
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 z-0"
+                    style={overlay}
+                />
+            ) : null}
+            <div className={`skin-border ${innerClasses.join(" ")} w-full h-full p-2 lg:gap-6 ${overlay ? "relative z-[1]" : ""}`}>
                 {children}
             </div>
         </div>

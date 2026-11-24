@@ -70,6 +70,9 @@ export function AccountScreen() {
         </div>
       )}
       {account.error ? <p className="max-w-sm font-sans text-sm text-tappen-sunset-300">{account.error}</p> : null}
+      <Link to="/skins" className="inline-flex min-h-11 items-center font-sans text-sm font-semibold text-tappen-blue-200">
+        Skins
+      </Link>
       <Link to="/" className="inline-flex min-h-11 items-center font-sans text-sm font-semibold text-tappen-blue-200">
         Back home
       </Link>

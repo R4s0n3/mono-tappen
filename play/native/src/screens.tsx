@@ -8,6 +8,7 @@ import { AccountScreen } from "./screens/account";
 import { ClaimScreen } from "./screens/claim";
 import { HomeScreen } from "./screens/home";
 import { RoomRoute } from "./screens/room";
+import { SkinScreen } from "./screens/skins";
 
 export type NativeScreen = {
   path: string;
@@ -23,6 +24,7 @@ export const screens: NativeScreen[] = [
   { path: "/room/:roomId", element: <RoomRoute />, area: "play" },
   { path: "/claim", element: <ClaimScreen />, area: "play" },
   { path: "/offline", element: <OfflinePage />, area: "play" },
+  { path: "/skins", element: <SkinScreen />, area: "play" },
 ];
 
 /**
@@ -30,10 +32,8 @@ export const screens: NativeScreen[] = [
  * call the client from platform/api.ts. Suggested slots:
  * - /decks and /decks/new — deck list and create. Premium is the extra-deck gate.
  * - /profile — entitlement and display name. Account deletion is /account.
- * - /skins — owned skins, purchased with StoreKit (platform/purchases.ts).
  */
 export const futureHubScreens: Array<{ path: string; notes: string }> = [
   { path: "/decks", notes: "deck.list and deck.create" },
   { path: "/profile", notes: "account.entitlement, profile, delete account" },
-  { path: "/skins", notes: "skin catalog and StoreKit non-consumables" },
 ];

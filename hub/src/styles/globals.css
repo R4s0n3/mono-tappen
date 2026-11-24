@@ -83,3 +83,53 @@
 ::-webkit-scrollbar-thumb {
   @apply rounded bg-tappen-purple-500 hover:bg-tappen-purple-400;
 }
+
+/* Same card flip the play app uses for the skin builder preview. */
+.card-flip-scene {
+  perspective: 900px;
+  -webkit-perspective: 900px;
+}
+
+.card-flip-root,
+.card-flip {
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+
+.card-flip {
+  position: absolute;
+  inset: 0;
+}
+
+.card-flip-face {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateY(0deg) translateZ(1px);
+  -webkit-transform: rotateY(0deg) translateZ(1px);
+}
+
+.card-flip-face-back {
+  transform: rotateY(180deg) translateZ(1px);
+  -webkit-transform: rotateY(180deg) translateZ(1px);
+}
+
+/* Builder preview. Clip each face on an inner layer so the 3D flip
+   does not flatten the back. Same 0.25rem radius as the card front. */
+.skin-builder-face {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0.25rem;
+  clip-path: inset(0 round 0.25rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-flip,
+  .card-flip-face,
+  .card-flip-face-back {
+    transition: none;
+  }
+}
