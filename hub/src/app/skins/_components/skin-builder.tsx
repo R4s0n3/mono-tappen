@@ -214,6 +214,7 @@ export function SkinBuilder({ signedIn }: { signedIn?: boolean }) {
   const [notice, setNotice] = useState<string | null>(null);
   const hydrated = useRef(false);
   const touched = useRef(false);
+  const editorSession = useRef(0);
 
   useEffect(() => {
     if (hydrated.current || touched.current) return;
@@ -260,8 +261,13 @@ export function SkinBuilder({ signedIn }: { signedIn?: boolean }) {
     liveSkin != null &&
     !draftMatchesPlaySkin(draft, equipped.data.playSkin);
 
-  function choose(key: string, value: string) {
+  function markEditing() {
+    editorSession.current += 1;
     touched.current = true;
+  }
+
+  function choose(key: string, value: string) {
+    markEditing();
     setNotice(null);
     setDraft((current) => applyDraftChoice(current, key, value));
   }
@@ -278,6 +284,7 @@ export function SkinBuilder({ signedIn }: { signedIn?: boolean }) {
       setNotice(painted.message);
       return null;
     }
+    const session = editorSession.current;
     try {
       if (editingId) {
         const saved = await updateSkin.mutateAsync({
@@ -285,7 +292,7 @@ export function SkinBuilder({ signedIn }: { signedIn?: boolean }) {
           name: named.name,
           config: painted.config,
         });
-        setName(saved.name);
+        if (editorSession.current === session) setName(saved.name);
         return saved.id;
       }
       if (action === "blocked") {
@@ -293,8 +300,10 @@ export function SkinBuilder({ signedIn }: { signedIn?: boolean }) {
         return null;
       }
       const saved = await createSkin.mutateAsync({ name: named.name, config: painted.config });
-      setEditingId(saved.id);
-      setName(saved.name);
+      if (editorSession.current === session) {
+        setEditingId(saved.id);
+        setName(saved.name);
+      }
       return saved.id;
     } catch (error) {
       setNotice(errorMessage(error));
@@ -303,7 +312,7 @@ export function SkinBuilder({ signedIn }: { signedIn?: boolean }) {
   }
 
   function startNew() {
-    touched.current = true;
+    markEditing();
     setEditingId(null);
     setConfirmDrop(false);
     const next = defaultOwnSkinDraft();
@@ -314,7 +323,7 @@ export function SkinBuilder({ signedIn }: { signedIn?: boolean }) {
   }
 
   function selectSkin(skin: { id: string; name: string; config: unknown }) {
-    touched.current = true;
+    markEditing();
     setConfirmDrop(false);
     const painted = previewOwnSkin(skin.config);
     if (!painted.ok) {
@@ -422,6 +431,14 @@ export function SkinBuilder({ signedIn }: { signedIn?: boolean }) {
                     {skinBuilderCopy.newLook}
                   </button>
                 </div>
+                {list.isError ? (
+                  <div className="flex flex-col items-start gap-2">
+                    <p className="text-sm leading-6 text-tappen-blue-200">{skinBuilderCopy.listError}</p>
+                    <button type="button" className={secondaryButton} onClick={() => void list.refetch()}>
+                      {skinBuilderCopy.retry}
+                    </button>
+                  </div>
+                ) : null}
                 {list.isSuccess && list.data.skins.length === 0 ? (
                   <p className="text-sm text-tappen-blue-200">{skinBuilderCopy.empty}</p>
                 ) : null}
@@ -473,7 +490,7 @@ export function SkinBuilder({ signedIn }: { signedIn?: boolean }) {
                 autoComplete="off"
                 placeholder={skinBuilderCopy.namePlaceholder}
                 onChange={(event) => {
-                  touched.current = true;
+                  markEditing();
                   setName(event.target.value);
                 }}
                 className="min-h-11 w-full rounded-2xl bg-tappen-blue-800 px-4 text-base text-tappen-blue-50 outline-none ring-1 ring-inset ring-tappen-blue-300/40 focus:ring-tappen-sunset-400"
@@ -576,14 +593,17 @@ export function SkinBuilder({ signedIn }: { signedIn?: boolean }) {
                       className={secondaryButton}
                       disabled={busy}
                       onClick={() => {
-                        void removeSkin.mutateAsync({ id: editingId }).then(
+                        const session = editorSession.current;
+                        const id = editingId;
+                        void removeSkin.mutateAsync({ id }).then(
                           () => {
+                            if (editorSession.current !== session) return;
                             setEditingId(null);
                             setConfirmDrop(false);
                             const next = defaultOwnSkinDraft();
                             setDraft(next);
                             const taken = (list.data?.skins ?? [])
-                              .filter((skin) => skin.id !== editingId)
+                              .filter((skin) => skin.id !== id)
                               .map((skin) => skin.name);
                             setName(suggestSkinName(next.palette, taken));
                             setNotice(skinBuilderCopy.droppedNotice);

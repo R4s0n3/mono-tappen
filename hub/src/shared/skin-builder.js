@@ -69,6 +69,7 @@ export const skinBuilderCopy = {
   droppedNotice: "Dropped.",
   errorGeneric: "That did not save. Try again.",
   unreadable: "That look cannot be shown. You can still drop it.",
+  listError: "Could not load your looks.",
 };
 
 /** @type {Record<string, Record<string, string>>} */
