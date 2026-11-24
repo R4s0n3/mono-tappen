@@ -12,6 +12,7 @@
  * the WebSocket transport in the same process.
  */
 import { PrismaClient } from "@prisma/client";
+import { renderStoredOwnSkin } from "../../shared/own-skin.js";
 
 /**
  * The custom server and the Next.js app are one process but two module
@@ -43,7 +44,7 @@ export function playerPublic(p) {
   };
 }
 
-function turnState(turn, deckName) {
+function turnState(turn, deckName, playSkin) {
   if (!turn) return null;
   return {
     sequence: turn.sequence,
@@ -51,9 +52,33 @@ function turnState(turn, deckName) {
     cardId: turn.card.cardId,
     content: turn.card.content,
     skinId: turn.card.skinId,
+    // Host's equipped own skin, or null so the card keeps its shop skin.
+    // Same object for stage and controllers.
+    playSkin: playSkin ?? null,
     nsfw: turn.card.nsfw,
     targetId: turn.targetId,
   };
+}
+
+/**
+ * The host's equipped own skin, already checked against the allowlist.
+ * No Premium check: a saved look keeps rendering.
+ * Returns null when the host has no account or no equipped skin.
+ */
+async function hostPlaySkin(hostPlayerId) {
+  if (!hostPlayerId) return null;
+  const host = await prisma.player.findUnique({
+    where: { id: hostPlayerId },
+    select: { userId: true },
+  });
+  if (!host?.userId) return null;
+  const equipped = await prisma.ownSkinEquip.findUnique({
+    where: { userId: host.userId },
+    include: { skin: true },
+  });
+  if (!equipped?.skin) return null;
+  const rendered = renderStoredOwnSkin(equipped.skin);
+  return rendered ? rendered.playSkin : null;
 }
 
 /**
@@ -85,6 +110,7 @@ export async function buildRoomState(roomId, role) {
   const currentTurn = room.turns[0] ?? null;
   const deckName = room.deck?.name ?? "Tappen";
   void role;
+  const playSkin = currentTurn ? await hostPlaySkin(room.hostId) : null;
 
   return {
     roomId: room.id,
@@ -94,7 +120,7 @@ export async function buildRoomState(roomId, role) {
     deckId: room.deck?.id ?? null,
     deckName,
     players: room.players.map(playerPublic),
-    turn: turnState(currentTurn, deckName),
+    turn: turnState(currentTurn, deckName, playSkin),
   };
 }
 

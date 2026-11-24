@@ -5,7 +5,7 @@ import { StorefrontShell } from "@/app/_components/storefront-shell";
 import { HOME_SHIP_BY_LABEL } from "@/lib/home/product";
 
 export const metadata: Metadata = {
-  title: "Withdrawal notice — Tappen",
+  title: "Withdrawal notice: Tappen",
   description:
     "Right of withdrawal for the Tappen Home printed card set, sold to customers in Germany and the European Union.",
 };
@@ -62,10 +62,10 @@ export default function WithdrawalPage() {
             indicated by you acquires, physical possession of the goods.
           </p>
           <p>
-            To exercise the right of withdrawal, you must inform us — Pascal
+            To exercise the right of withdrawal, you must inform us (Pascal
             Schoenen, trading as „Mio Mideal“, Kaiser-Friedrich-Ring 17, 66740
             Saarlouis, Germany, email legal@miomideal.com, phone +49 1567
-            9815927 — of your decision to withdraw from this contract by an
+            9815927) of your decision to withdraw from this contract by an
             unequivocal statement (for example a letter sent by post or email).
             You may use the model withdrawal form below, but it is not
             obligatory.

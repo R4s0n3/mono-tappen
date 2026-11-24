@@ -11,13 +11,18 @@
  * change. There is no delta log: each broadcast is a full snapshot, which
  * makes reconnect trivially safe (re-subscribe, get a snapshot).
  *
- * The host may also send ephemeral card poses:
+ * Any joined player may send an ephemeral card pose:
  *
  *   { "type": "card.transform", "x", "y", "rotation", "flipped", "dragging", "sequence" }
  *
- * Those are validated, rate-limited to ~30 Hz, kept in memory, and relayed to
- * the room. They are not written to the database. The latest pose is attached
- * to snapshots as `cardTransform` so a late joiner picks up the live card.
+ * The first `dragging: true` the server accepts owns the card. Later moves
+ * from anyone else are ignored until that player releases, stays quiet for
+ * about 3 seconds, disconnects, or the turn changes. Poses are validated,
+ * rate-limited to ~30 Hz, kept in memory, and relayed to the room. They are
+ * not written to the database. The latest pose is attached to snapshots as
+ * `cardTransform` so a late joiner picks up the live card. Skip and draw are
+ * not socket events: `room.advance` is the only path, and it rejects anyone
+ * who is not the host.
  *
  * tRPC mutations call `hub.publish(roomId)` after they mutate state.
  * `room.advance` calls `hub.beginDeal(roomId)` first so the new card deals in
@@ -26,7 +31,7 @@
  */
 import { PrismaClient } from "@prisma/client";
 import { buildRoomState } from "./snapshot.js";
-import { createTransformFanout } from "../../shared/card-transform.js";
+import { canSkipOrDraw, createTransformFanout, isSocketAdvanceEvent } from "../../shared/card-transform.js";
 
 /**
  * Same process, two module graphs (custom server vs webpack-compiled app):
@@ -41,7 +46,7 @@ class RoomHub {
   constructor() {
     /** @type {Map<string, Set<import("ws").WebSocket>>} */
     this.rooms = new Map();
-    /** @type {Map<import("ws").WebSocket, { roomId: string, playerId: string, role: string, isHost: boolean, alive: boolean }>} */
+    /** @type {Map<import("ws").WebSocket, { roomId: string, playerId: string, role: string, isHost: boolean, displayName: string, alive: boolean }>} */
     this.clients = new Map();
     this.heartbeat = null;
     this.cards = createTransformFanout();
@@ -96,6 +101,12 @@ class RoomHub {
       return;
     }
 
+    // Drawing the next card is room.advance over tRPC. A socket skip or draw
+    // from a guest is ignored, and the host is not given a second path here.
+    if (isSocketAdvanceEvent(msg.type)) {
+      return;
+    }
+
     if (msg.type === "card.transform") {
       this.handleCardTransform(ws, msg);
     }
@@ -112,6 +123,7 @@ class RoomHub {
       where: { connectionToken: token },
       select: {
         id: true,
+        displayName: true,
         roomId: true,
         role: true,
         room: { select: { hostId: true } },
@@ -123,10 +135,11 @@ class RoomHub {
       return;
     }
 
-    // The host is the stage seat recorded on the room. A room created before
-    // hostId was backfilled still treats the STAGE role as the host.
+    // Skip and draw belong to the stage host. A room created before hostId
+    // was backfilled still treats the STAGE role as the host. Everyone else
+    // may drag, but the server will not accept a fly-out from them.
     const hostId = player.room?.hostId ?? null;
-    const isHost = hostId ? player.id === hostId : player.role === "STAGE";
+    const isHost = canSkipOrDraw(player, { hostId });
 
     // A player may hold several sockets (open tab + phone). Presence is
     // "connected" if at least one socket for this player is open.
@@ -145,6 +158,7 @@ class RoomHub {
       playerId: player.id,
       role: player.role,
       isHost,
+      displayName: player.displayName,
       alive: true,
     });
     if (!this.rooms.has(roomId)) this.rooms.set(roomId, new Set());
@@ -160,13 +174,19 @@ class RoomHub {
       return;
     }
 
-    const result = this.cards.handle(client.roomId, client, msg, (transform) => {
+    const relay = (transform) => {
       // Fresh object — never forward caller fields such as queuedById.
       this.relay(client.roomId, { type: "card.transform", transform });
-    });
+    };
+    const result = this.cards.handle(client.roomId, client, msg, relay);
 
     if (result.kind === "error") {
       this.send(ws, { type: "error", error: result.error });
+      return;
+    }
+    // The loser of a grab hears the pose that won. Everyone else already has it.
+    if (result.kind === "deny") {
+      this.send(ws, { type: "card.transform", transform: result.transform });
     }
   }
 
@@ -181,6 +201,11 @@ class RoomHub {
       (sock) => this.clients.get(sock)?.playerId === client.playerId
     );
     if (!stillConnected) {
+      // Release before the presence write. A reconnect during that write can
+      // grab again, and a late release would clear the new hold.
+      this.cards.releaseHolder(client.roomId, client.playerId, (transform) => {
+        this.relay(client.roomId, { type: "card.transform", transform });
+      });
       await prisma.player.update({
         where: { id: client.playerId },
         data: { isConnected: false, lastSeenAt: new Date() },
@@ -203,11 +228,21 @@ class RoomHub {
     }
 
     let sequence = null;
+    let mixedTurn = false;
     for (const built of byRole.values()) {
-      if (built?.turn && typeof built.turn.sequence === "number") {
-        sequence = built.turn.sequence;
-        break;
+      const seq = built?.turn && typeof built.turn.sequence === "number" ? built.turn.sequence : null;
+      if (seq == null) continue;
+      if (sequence == null) {
+        sequence = seq;
+        continue;
       }
+      if (seq !== sequence) mixedTurn = true;
+    }
+    const live = this.cards.getTransform(roomId).sequence;
+    // Two role reads can straddle a draw. Sending the older one would rewind
+    // the card and drop the current hold. Same-turn presence updates still pass.
+    if (mixedTurn || (typeof live === "number" && sequence != null && sequence < live)) {
+      return;
     }
     const cardTransform = this.cards.noteSequence(roomId, sequence);
 

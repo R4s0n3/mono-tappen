@@ -11,6 +11,8 @@ export interface TurnState {
   cardId: string;
   content: string;
   skinId: string;
+  /** Host's equipped own skin, or null when the card keeps its shop skin. */
+  playSkin: import("../../shared/own-skin.js").PlaySkin | null;
   nsfw: boolean;
   targetId: string | null;
 }

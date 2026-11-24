@@ -44,7 +44,7 @@ export function CallToAction() {
         href="/home-edition"
         className="text-lg font-bold text-tappen-sunset-200 underline decoration-tappen-sunset-400/70 underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-tappen-sunset-300"
       >
-        Preorder Tappen Home — the printed set
+        Preorder Tappen Home, the printed set
       </Link>
     </section>
   );

@@ -1,4 +1,5 @@
 import type { CardTransform } from "@/shared/card-transform";
+import type { PlaySkin } from "@/shared/own-skin";
 
 export type { CardTransform };
 
@@ -13,8 +14,9 @@ export type RoomPlayer = {
 };
 
 /**
- * Stage and controllers see the same card face. `cardTransform` is the host's
- * latest ephemeral pose (not stored). Anonymous-queue fields are never present.
+ * Stage and controllers see the same card face. `cardTransform` is the latest
+ * ephemeral pose (not stored), including who is holding the card.
+ * Anonymous-queue fields are never present.
  */
 export type RoomState = {
   roomId: string;
@@ -31,6 +33,8 @@ export type RoomState = {
     cardId: string;
     content: string;
     skinId: string;
+    /** Host's equipped own skin. Missing or null keeps the shop skin. */
+    playSkin?: PlaySkin | null;
     nsfw: boolean;
     targetId: string | null;
   } | null;

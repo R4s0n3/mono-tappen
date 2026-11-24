@@ -6,7 +6,7 @@ export function Info(){
     </div>
     </div>
   <div className="flex flex-col">
-  <p className="text-2xl lg:text-4xl font-sans text-start  w-full font-normal lg:leading-normal"><b>Tappen app</b> is a game designed to break the ice and bring people together through fun, interactivity, and <b>community-driven</b> gameplay. Perfect for small to large groups. It helps sparking connections and laughter.</p>
+  <p className="text-2xl lg:text-4xl font-sans text-start  w-full font-normal lg:leading-normal"><b>Tappen app</b> is a game designed to break the ice and bring people together through fun, interactivity, and <b>community-driven</b> gameplay. Perfect for small to large groups. It helps spark connections and laughter.</p>
   <p className="text-2xl lg:text-4xl font-sans text-start w-full font-normal lg:leading-normal"><b>With your cards</b> Tappen creates a playful space for memorable moments and meaningful interactions.</p>
   </div>
   </div>

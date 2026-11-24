@@ -211,6 +211,7 @@ export async function eraseUserAccount(db: PrismaClient, userId: string, now: Da
     await tx.appleSignIn.deleteMany({ where: { userId } });
     await tx.appleIapPurchase.deleteMany({ where: { userId } });
     await tx.userSkin.deleteMany({ where: { userId } });
+    await tx.ownSkin.deleteMany({ where: { userId } });
     await tx.deck.updateMany({
       where: { creatorId: userId },
       data: { name: null, image: null, deletedAt: now },

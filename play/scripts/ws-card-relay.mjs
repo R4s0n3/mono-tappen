@@ -15,9 +15,9 @@ import {
 } from "../src/shared/card-transform.js";
 
 const ROOM = "room-live-card";
-const HOST = { token: "host-token", playerId: "host", isHost: true, roomId: ROOM };
-const VIEW_A = { token: "view-a", playerId: "viewer-a", isHost: false, roomId: ROOM };
-const VIEW_B = { token: "view-b", playerId: "viewer-b", isHost: false, roomId: ROOM };
+const HOST = { token: "host-token", playerId: "host", isHost: true, displayName: "Stage", roomId: ROOM };
+const VIEW_A = { token: "view-a", playerId: "viewer-a", isHost: false, displayName: "Alex", roomId: ROOM };
+const VIEW_B = { token: "view-b", playerId: "viewer-b", isHost: false, displayName: "Sam", roomId: ROOM };
 const MEMBERS = new Map([HOST, VIEW_A, VIEW_B].map((member) => [member.token, member]));
 
 const fanout = createTransformFanout();
@@ -112,6 +112,8 @@ wss.on("connection", (ws) => {
       const result = fanout.handle(ROOM, member, msg, relay);
       if (result.kind === "error") {
         ws.send(JSON.stringify({ type: "error", error: result.error }));
+      } else if (result.kind === "deny") {
+        ws.send(JSON.stringify({ type: "card.transform", transform: result.transform }));
       }
     }
   });
@@ -213,16 +215,18 @@ try {
   assert(JSON.stringify(aRelays[1]) === JSON.stringify(bRelays[1]), "viewers diverged");
   assert(!JSON.stringify(aRelays).includes("queuedById"), "viewer relay leaked queuedById");
 
-  const before = aRelays.length;
-  viewerA.ws.send(JSON.stringify(pose(0.9, false)));
-  const rejection = await until(
-    () => viewerA.messages.find((msg) => msg.type === "error" && msg.error === "only the host can move the card"),
-    "host rejection",
-  );
-  assert(rejection, "viewer was not rejected");
-  await delay(50);
-  assert(relays(host.messages).length === before, "a viewer pose was relayed");
-  assert(relays(viewerB.messages).length === before, "viewer B saw a non-host pose");
+  const before = relays(host.messages).length;
+  viewerA.ws.send(JSON.stringify({ ...pose(0.9, true), flipped: true }));
+  const denial = await until(() => {
+    const mine = relays(viewerA.messages);
+    return mine.length > before ? mine[mine.length - 1] : null;
+  }, "hold denial");
+  assert(denial.transform?.holderId === HOST.playerId, "denial did not name the holder");
+  assert(denial.transform?.x !== 0.9, "a locked pose was applied");
+  assert(denial.transform?.flipped === false, "a guest flip was applied while locked out");
+  await delay(40);
+  assert(relays(host.messages).length === before, "a locked pose was relayed");
+  assert(relays(viewerB.messages).length === before, "viewer B saw a locked pose");
 
   await delay(40);
   host.ws.send(JSON.stringify({ ...pose(0.66, false), flipped: true }));
@@ -256,12 +260,13 @@ try {
   fanout.beginDeal(ROOM);
   turnSequence = 2;
   const dealt = broadcast();
-  assert(dealt.y < 0 && dealt.sequence === 2 && dealt.flipped === false, "advance did not park the deal-in pose");
+  assert(dealt.y < 0 && dealt.sequence === 2 && dealt.flipped === true, "advance did not park the deal-in pose");
   const dealtState = await until(
     () => viewerA.messages.find((msg) => msg.type === "state" && msg.state?.turn?.sequence === 2),
     "deal snapshot",
   );
   assert(dealtState.state.cardTransform.y < 0, "viewers were not told to deal the next card");
+  assert(dealtState.state.cardTransform.flipped === true, "viewers were not dealt a face-down card");
 
   await delay(40);
   host.ws.send(
@@ -280,6 +285,89 @@ try {
     "fly-out",
   );
   assert(flown.transform.rotation === 26, "fly-out rotation was not relayed");
+
+  host.ws.send(
+    JSON.stringify({
+      type: "card.transform",
+      x: 0.5,
+      y: 0.5,
+      rotation: 0,
+      flipped: false,
+      dragging: false,
+      sequence: 2,
+    }),
+  );
+  await until(
+    () => relays(late.messages).find((msg) => msg.transform?.x === 0.5 && msg.transform?.sequence === 2 && msg.transform?.holderId == null),
+    "host returned the card",
+  );
+
+  viewerA.ws.send(
+    JSON.stringify({
+      type: "card.transform",
+      x: 0.72,
+      y: 0.44,
+      rotation: 90,
+      flipped: true,
+      dragging: true,
+      sequence: 2,
+    }),
+  );
+  const guestMove = await until(
+    () => relays(late.messages).find((msg) => msg.transform?.holderId === VIEW_A.playerId && msg.transform?.x === 0.72),
+    "guest drag",
+  );
+  assert(guestMove.transform.flipped === false, "guest flip was relayed");
+  assert(guestMove.transform.rotation <= 24, "guest rotation was not clamped");
+  assert(guestMove.transform.holderName === "Alex", "holder name was not assigned");
+  assert(guestMove.transform.dragging === true, "guest drag was not marked");
+
+  const sawAlex = (msg) =>
+    msg.transform?.holderId === VIEW_A.playerId &&
+    msg.transform?.x === 0.72 &&
+    msg.transform?.sequence === 2;
+  await until(() => relays(host.messages).find(sawAlex), "host saw the guest drag");
+  await until(() => relays(viewerA.messages).find(sawAlex), "holder saw their own drag");
+  const hostBeforeSecond = relays(host.messages).length;
+  const alexBeforeSecond = relays(viewerA.messages).length;
+  late.ws.send(
+    JSON.stringify({
+      type: "card.transform",
+      x: 0.2,
+      y: 0.5,
+      rotation: 0,
+      flipped: false,
+      dragging: true,
+      sequence: 2,
+    }),
+  );
+  await delay(50);
+  assert(relays(host.messages).length === hostBeforeSecond, "a second guest moved a held card");
+  assert(relays(viewerA.messages).length === alexBeforeSecond, "the holder saw a second guest pose");
+
+  const releaseMark = relays(host.messages).length;
+  viewerA.ws.send(
+    JSON.stringify({
+      type: "card.transform",
+      x: 1.72,
+      y: 0.4,
+      rotation: 26,
+      flipped: false,
+      dragging: false,
+      sequence: 2,
+    }),
+  );
+  const released = await until(
+    () => relays(host.messages).slice(releaseMark).find((msg) => msg.transform?.dragging === false),
+    "guest release",
+  );
+  assert(released.transform.x === 0.5 && released.transform.y === 0.5, "a guest fling did not spring home");
+  assert(released.transform.rotation === 0, "a guest fling kept its rotation");
+  assert(released.transform.holderId == null, "a guest release kept the lock");
+  assert(
+    !relays(host.messages).slice(releaseMark).some((msg) => msg.transform?.x === 1.72),
+    "a guest fling was relayed as a skip",
+  );
 
   console.log(`ws-card-relay ok (host + 2 viewers on 127.0.0.1:${port})`);
 } finally {

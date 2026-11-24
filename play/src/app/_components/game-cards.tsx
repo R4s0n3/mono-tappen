@@ -1,6 +1,7 @@
 'use client'
 import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { ArrowPathRoundedSquareIcon, ChevronDoubleRightIcon } from "@heroicons/react/24/solid";
+import type { PlaySkin } from "@/shared/own-skin"
 import TappenCard from "./tappen-card/tappen-card";
 import TinderCard from "react-tinder-card";
 import Modal from "./modal";
@@ -16,6 +17,8 @@ type GameCardsProps = {
     skin: string,
     id: string
   }[]
+  /** Signed-in player's equipped own skin. Shop skins show when this is empty. */
+  playSkin?: PlaySkin | null
   /**
    * `overlay` pins the previous/next icons over the page. That is the website.
    * `external` leaves those actions to the caller, which is how the native
@@ -29,7 +32,7 @@ export type GameCardsHandle = {
   next: () => Promise<void>
 }
 
-function GameCards({ cards, controls = "overlay" }: GameCardsProps, ref: React.ForwardedRef<GameCardsHandle>) {
+function GameCards({ cards, controls = "overlay", playSkin = null }: GameCardsProps, ref: React.ForwardedRef<GameCardsHandle>) {
   const [gameOver, setGameOver] = useState(false);
   const [activeCard, setActiveCard] = useState(cards.length - 1);
   const swipeSettings = useTappenCardSwipeSettings();
@@ -152,7 +155,7 @@ function GameCards({ cards, controls = "overlay" }: GameCardsProps, ref: React.F
             onCardLeftScreen={() => outOfFrame(card.id, originalIndex)}
           >
             <div className="w-full min-w-80 max-w-xs transform-gpu will-change-transform">
-              <TappenCard card={card.id} skin={card.skin} />
+              <TappenCard card={card.id} skin={card.skin} playSkin={playSkin} />
             </div>
           </TinderCard>
         );

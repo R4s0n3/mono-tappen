@@ -12,6 +12,7 @@ import GameCards from "./_components/game-cards";
 export default async function Home({ searchParams }: { searchParams: { mode: string, uid: string, did: string, tid: string, game: string } }) {
   const session = await getServerAuthSession();
   const entitlement = session?.user ? await api.account.entitlement() : null;
+  const equipped = session?.user ? await api.ownSkin.equipped() : null;
   const { mode, uid, did, tid, game } = searchParams;
   const tagIds: string[] = tid?.split('-') ?? [];
   const cardIds: string[] = game?.split('-') ?? [];
@@ -25,7 +26,7 @@ export default async function Home({ searchParams }: { searchParams: { mode: str
       {/* <button type="button"   className="absolute flex gap-2 justify-center items-center text-center top-8 left-6 p-1 px-6 bg-tappen-purple-300 rounded-full">
         <AdjustmentsHorizontalIcon className="size-4" /> filter</button> */}
       <div className="size-full max-w-xl flex justify-center items-center flex-col">
-        {hasGameMode ? <GameCards cards={gameCards.map(card => ({
+        {hasGameMode ? <GameCards playSkin={equipped?.playSkin ?? null} cards={gameCards.map(card => ({
           id: card.cardId,
           skin: card.skinId
         }))} /> : <ModePicker />}
