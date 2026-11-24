@@ -101,31 +101,35 @@ function LiveCard({ playSkin, face }: { playSkin: PlaySkin; face: "front" | "bac
   const turned = face === "back";
 
   return (
-    <div className="card-flip-scene relative aspect-[5/7] w-full">
+    <div className="skin-builder-card card-flip-scene relative aspect-[5/7] w-full">
       <div className="card-flip-root relative h-full w-full">
         <div
           className="card-flip transition-transform duration-500 motion-reduce:transition-none"
           style={{ transform: turned ? "rotateY(180deg)" : "rotateY(0deg)" }}
         >
           <div className="card-flip-face" aria-hidden={turned}>
-            <CardSkin skinObject={faceItem(playSkin)} overlay={faceOverlay(playSkin)} enableTilt={false}>
-              <div className="flex h-full min-h-0 flex-col justify-between">
-                <p className="text-2xl leading-tight">{skinBuilderCopy.sample}</p>
-                <span className="font-sans text-xs font-semibold uppercase tracking-wide opacity-60">
-                  {skinBuilderCopy.previewTag}
-                </span>
-              </div>
-            </CardSkin>
+            <div className="skin-builder-face">
+              <CardSkin skinObject={faceItem(playSkin)} overlay={faceOverlay(playSkin)} enableTilt={false}>
+                <div className="flex h-full min-h-0 flex-col justify-between p-[14%]">
+                  <p className="text-2xl leading-tight">{skinBuilderCopy.sample}</p>
+                  <span className="font-sans text-xs font-semibold uppercase tracking-wide opacity-60">
+                    {skinBuilderCopy.previewTag}
+                  </span>
+                </div>
+              </CardSkin>
+            </div>
           </div>
           <div className="card-flip-face card-flip-face-back" aria-hidden={!turned}>
-            {back ? (
-              <CardBack
-                primary={back.primary}
-                secondary={back.secondary}
-                highlight={back.highlight}
-                rarity={back.rarity}
-              />
-            ) : null}
+            <div className="skin-builder-face">
+              {back ? (
+                <CardBack
+                  primary={back.primary}
+                  secondary={back.secondary}
+                  highlight={back.highlight}
+                  rarity={back.rarity}
+                />
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
@@ -478,7 +482,7 @@ export function SkinBuilder({ signedIn }: { signedIn?: boolean }) {
 
             <fieldset className="flex flex-col gap-2">
               <legend className={legendClass}>{skinBuilderCopy.palette}</legend>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-4 justify-items-center gap-3 sm:grid-cols-8">
                 {ownSkinCatalog.palettes.map((palette) => {
                   const selected = draft.palette === palette;
                   return (
@@ -488,7 +492,7 @@ export function SkinBuilder({ signedIn }: { signedIn?: boolean }) {
                       aria-pressed={selected}
                       aria-label={choiceLabel("palettes", palette)}
                       onClick={() => choose("palette", palette)}
-                      className={`inline-flex size-11 items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tappen-sunset-400 ${selected ? "ring-2 ring-tappen-sunset-400 ring-offset-2 ring-offset-tappen-blue-700" : ""}`}
+                      className={`inline-flex size-11 items-center justify-center rounded-full ring-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tappen-sunset-400 ${selected ? "ring-tappen-sunset-400 ring-offset-2 ring-offset-tappen-blue-700" : "ring-tappen-blue-50/70"}`}
                       style={{ backgroundColor: palettePrimary(palette) }}
                     />
                   );

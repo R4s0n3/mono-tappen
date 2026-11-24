@@ -104,7 +104,7 @@
 .card-flip-face {
   position: absolute;
   inset: 0;
-  overflow: hidden;
+  overflow: visible;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   transform: rotateY(0deg) translateZ(1px);
@@ -114,6 +114,16 @@
 .card-flip-face-back {
   transform: rotateY(180deg) translateZ(1px);
   -webkit-transform: rotateY(180deg) translateZ(1px);
+}
+
+/* Builder preview. Clip each face on an inner layer so the 3D flip
+   does not flatten the back. Same 0.25rem radius as the card front. */
+.skin-builder-face {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0.25rem;
+  clip-path: inset(0 round 0.25rem);
 }
 
 @media (prefers-reduced-motion: reduce) {
