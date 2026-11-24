@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getServerAuthSession } from "@/server/auth";
 
 import { DashNavigation } from "../_components/dash-navigation";
@@ -27,8 +28,9 @@ export default async function Shop() {
       <DashNavigation page={"cards"} session={session !== null} />
     <div className="w-full pt-48  p-4 flex flex-col gap-8 justify-center">
     <div className="w-full flex justify-center items-center">
-    <div className="w-full max-w-screen-xl">
+    <div className="w-full max-w-screen-xl flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <h2 className="text-7xl font-bang">SHOP</h2>
+        <Link href="/skins" className="text-lg font-semibold text-tappen-sunset-300">Paint your own</Link>
     </div>
     </div>
       <FeaturedProducts products={productItems.filter(p => p.type !== "SKIN")} />

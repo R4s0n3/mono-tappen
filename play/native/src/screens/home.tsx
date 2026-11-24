@@ -65,12 +65,20 @@ export function HomeScreen() {
         onPrevious={() => void cardsRef.current?.previous()}
         onNext={() => void cardsRef.current?.next()}
       />
-      <Link
-        to="/account"
-        className="inline-flex min-h-11 items-center justify-center font-sans text-sm font-semibold text-tappen-blue-200"
-      >
-        {account.signedIn ? "Account" : "Sign in"}
-      </Link>
+      <div className="flex items-center gap-5">
+        <Link
+          to="/skins"
+          className="inline-flex min-h-11 items-center justify-center font-sans text-sm font-semibold text-tappen-blue-200"
+        >
+          Skins
+        </Link>
+        <Link
+          to="/account"
+          className="inline-flex min-h-11 items-center justify-center font-sans text-sm font-semibold text-tappen-blue-200"
+        >
+          {account.signedIn ? "Account" : "Sign in"}
+        </Link>
+      </div>
     </main>
   );
 }

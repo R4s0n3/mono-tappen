@@ -10,6 +10,7 @@ import {
   listOwnSkins,
   ownSkinTrpcError,
   readEquippedOwnSkin,
+  unequipOwnSkin,
   updateOwnSkin,
 } from "@/shared/own-skin";
 
@@ -22,9 +23,10 @@ function fail(error: unknown): never {
 }
 
 /**
- * Same own-skin API as play, on the hub session. The next hub builder calls
- * these procedures. Premium is `Subscription.status === "active"`.
- * `equipped` stays available so a saved look can keep rendering.
+ * Same own-skin API as play, on the hub session. Premium is
+ * `Subscription.status === "active"`. list, create, update, delete, equip,
+ * and unequip use that check. `equipped` stays available so a saved look
+ * can keep rendering.
  */
 export const ownSkinRouter = createTRPCRouter({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -74,6 +76,14 @@ export const ownSkinRouter = createTRPCRouter({
   equip: protectedProcedure.input(idInput).mutation(async ({ ctx, input }) => {
     try {
       return await equipOwnSkin(bindPrismaOwnSkinStore(ctx.db), ctx.session.user.id, input.id);
+    } catch (error) {
+      fail(error);
+    }
+  }),
+
+  unequip: protectedProcedure.mutation(async ({ ctx }) => {
+    try {
+      return await unequipOwnSkin(bindPrismaOwnSkinStore(ctx.db), ctx.session.user.id);
     } catch (error) {
       fail(error);
     }

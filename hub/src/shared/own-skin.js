@@ -9,9 +9,9 @@
  * the StoreKit purchase in PR #22 all set it. This module does not read
  * Apple purchase rows.
  *
- * Saving, editing, listing, and equipping require Premium. Rendering an
- * already equipped skin does not, so a look that is already on the account
- * keeps showing on cards.
+ * Saving, editing, listing, equipping, and clearing require Premium.
+ * Rendering an already equipped skin does not, so a look that is already
+ * on the account keeps showing on cards.
  *
  * Config v1 is an allowlist: palette, gradient, pattern, frame, tier, font.
  * Callers never supply CSS or URLs. Colors come from the palette table.
@@ -117,6 +117,7 @@ export const ownSkinCatalog = {
  * @property {(userId: string) => Promise<string | null>} equippedSkinId
  * @property {(userId: string) => Promise<OwnSkinRecord | null>} equippedSkin
  * @property {(userId: string, skinId: string) => Promise<void>} setEquipped
+ * @property {(userId: string) => Promise<void>} clearEquipped
  */
 
 /**
@@ -146,6 +147,7 @@ export const ownSkinCatalog = {
  * @property {{
  *   findUnique: (args: { where: { userId: string }, select?: { skinId: true }, include?: { skin: true } }) => Promise<{ skinId?: string, skin?: SkinRow | null } | null>,
  *   upsert: (args: { where: { userId: string }, create: { userId: string, skinId: string }, update: { skinId: string } }) => Promise<unknown>,
+ *   deleteMany: (args: { where: { userId: string } }) => Promise<unknown>,
  * }} ownSkinEquip
  */
 
@@ -584,6 +586,20 @@ export async function equipOwnSkin(store, userId, id) {
 }
 
 /**
+ * Shop skins show again. The saved look stays on the account.
+ * @param {OwnSkinStore} store
+ * @param {string} userId
+ */
+export async function unequipOwnSkin(store, userId) {
+  await store.transaction(async (tx) => {
+    await assertPremium(tx, userId);
+    await tx.lockUser(userId);
+    await tx.clearEquipped(userId);
+  });
+  return { equippedId: null };
+}
+
+/**
  * Render read. Premium is not required.
  * @param {OwnSkinStore} store
  * @param {string} userId
@@ -673,6 +689,9 @@ function storeFrom(client, nested) {
         create: { userId, skinId },
         update: { skinId },
       });
+    },
+    async clearEquipped(userId) {
+      await client.ownSkinEquip.deleteMany({ where: { userId } });
     },
   };
 }

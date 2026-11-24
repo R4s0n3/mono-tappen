@@ -36,6 +36,12 @@ export async function ProfileSection() {
               {entitlement.ownsPremiumSkin ? entitlementCopy.equip : ""}
             </span>
           </div>
+          <Link
+            href="/skins"
+            className="inline-flex min-h-11 items-center justify-center rounded-full bg-tappen-sunset-500 px-6 font-bold text-tappen-blue-900"
+          >
+            Your skins
+          </Link>
           {!entitlement.premium ? (
             <Link href="/shop/subscribe">
               Get Premium
